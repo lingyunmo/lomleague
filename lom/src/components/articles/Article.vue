@@ -1,0 +1,229 @@
+<template>
+  <div class="article-container" v-if="!loading">
+    <!-- 主内容容器 -->
+    <div class="article-wrapper">
+      <!-- 头部区域 -->
+      <div class="article-header">
+        <h1 class="article-title">{{ article.title }}</h1>
+        <n-space class="header-actions">
+          <n-button type="primary" @click="goBack">
+            <template #icon>
+              <n-icon><ArrowBack /></n-icon>
+            </template>
+            返回全部文章
+          </n-button>
+          <LikeButton v-if="article.id" entity-type="article" :entity-id="article.id" />
+          <n-button type="info" @click="copyLink">
+            <template #icon>
+              <n-icon><ShareSocial /></n-icon>
+            </template>
+            分享文章
+          </n-button>
+          <n-button
+            v-if="authStore.isAdmin"
+            type="error"
+            @click="confirmDeleteArticle"
+          >
+            <template #icon><n-icon><Trash /></n-icon></template>
+            删除文章
+          </n-button>
+        </n-space>
+      </div>
+
+      <!-- 文章内容卡片 -->
+      <n-card class="main-article" hoverable>
+        <n-space vertical>
+          <!-- 用户信息行 -->
+          <n-space justify="space-between" align="center">
+            <n-space align="center">
+              <n-avatar
+                  round
+                  size="large"
+                  :src="article.user?.avatar || '/default-avatar.png'"
+              />
+              <div>
+                <div class="username">{{ article.user?.username || '匿名用户' }}</div>
+                <n-text depth="3" class="post-time">
+                  <n-icon><Time /></n-icon> {{ formatDate(article.createdAt) }}
+                </n-text>
+              </div>
+            </n-space>
+            <n-tag type="info" round>
+              <n-icon><Globe /></n-icon> {{ article.region || '未知地区' }}
+            </n-tag>
+          </n-space>
+
+          <!-- 文章内容 -->
+          <div class="article-content">
+            <v-md-preview :text="article.content" />
+          </div>
+
+          <AttachmentGrid :files="attachments" />
+        </n-space>
+      </n-card>
+    </div>
+  </div>
+
+  <!-- 加载状态 -->
+  <div v-else class="loading-container">
+    <n-spin size="large" />
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useMessage, useDialog } from 'naive-ui';
+import api from '../../api/api.js';
+import { useAuthStore } from '../../stores/authStore.js';
+import { formatDate } from '../../utils/date.js';
+import AttachmentGrid from '../AttachmentGrid.vue';
+import LikeButton from '../LikeButton.vue';
+import { ArrowBack, Time, Globe, ShareSocial, Trash } from '@vicons/ionicons5';
+
+const authStore = useAuthStore();
+const dialog = useDialog();
+const route = useRoute();
+const router = useRouter();
+const message = useMessage();
+const article = ref({});
+const loading = ref(true);
+
+// 获取文章详情
+const fetchArticle = async () => {
+  const articleId = route.params.id;
+  try {
+    const response = await api.get(`/articles/${articleId}`);
+    article.value = response.data || {};
+  } catch (error) {
+    console.error('获取文章失败:', error);
+    message.error('获取文章失败，请稍后重试');
+    await router.push('/articles');
+  } finally {
+    loading.value = false;
+  }
+};
+
+// 返回全部文章
+const goBack = () => {
+  router.push({ name: 'Articles' });
+};
+
+// 复制链接
+const copyLink = () => {
+  const url = window.location.href;
+  navigator.clipboard.writeText(url).then(() => {
+    message.success('链接已复制到剪贴板，快去分享吧！');
+  });
+};
+
+const confirmDeleteArticle = () => {
+  dialog.warning({
+    title: '确认删除',
+    content: '删除后无法恢复，确定删除此文章？',
+    positiveText: '确定',
+    negativeText: '取消',
+    onPositiveClick: async () => {
+      try {
+        await api.delete(`/articles/${article.value.id}`);
+        message.success('文章已删除');
+        router.push({ name: 'Articles' });
+      } catch {
+        message.error('删除失败');
+      }
+    },
+  });
+};
+
+// 解析附件（兼容已解析的数组和 JSON 字符串）
+const parseAttachments = (val) => {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val); } catch { return []; }
+};
+
+const attachments = computed(() => parseAttachments(article.value.attachments));
+
+onMounted(() => {
+  fetchArticle();
+});
+</script>
+
+<style scoped>
+.article-container {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #141e30, #243b55);
+  animation: fadeIn 1s ease-in-out;
+  min-height: 100vh;
+}
+
+.article-wrapper {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.article-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.article-title {
+  color: #4ecca3;
+  font-size: 28px;
+  text-align: center;
+  margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.main-article {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  transition: transform 0.2s ease;
+}
+
+.main-article:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.username {
+  font-weight: 500;
+  color: #4ecca3;
+}
+
+.post-time {
+  font-size: 12px;
+  color: #888;
+}
+
+.article-content {
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 8px;
+}
+
+/* 新增标题装饰线 */
+.article-title::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: #4ecca3;
+  margin: 12px auto;
+  border-radius: 2px;
+}
+</style>

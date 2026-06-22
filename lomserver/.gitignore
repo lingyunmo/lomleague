@@ -1,0 +1,21 @@
+node_modules
+# Keep environment variables out of version control
+.env
+# SQL dump files in root
+/*.sql
+
+# User uploaded files (runtime data)
+upload/
+
+# Application logs
+logs/
+*.log
+
+# IDE
+.idea
+.vscode/*
+!.vscode/extensions.json
+
+# OS
+.DS_Store
+Thumbs.db
