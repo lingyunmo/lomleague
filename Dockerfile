@@ -7,7 +7,7 @@ FROM node:22-alpine AS frontend-builder
 RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
 WORKDIR /app/lom
 COPY lom/package.json lom/pnpm-lock.yaml lom/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN echo 'onlyBuiltDependencies=esbuild' > .npmrc && pnpm install --frozen-lockfile
 COPY lom/ ./
 RUN pnpm build
 
@@ -17,7 +17,7 @@ RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
 WORKDIR /app/lomserver
 
 COPY lomserver/package.json lomserver/pnpm-lock.yaml lomserver/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN echo 'onlyBuiltDependencies=@prisma/client @prisma/engines esbuild prisma bcrypt' > .npmrc && pnpm install --frozen-lockfile
 
 COPY lomserver/ ./
 RUN npx prisma generate
