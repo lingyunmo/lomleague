@@ -6,7 +6,6 @@ RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
 WORKDIR /app/lom
 COPY lom/package.json lom/pnpm-lock.yaml lom/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile --ignore-scripts
-RUN node node_modules/esbuild/install.js
 COPY lom/ ./
 RUN pnpm build
 
