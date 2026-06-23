@@ -4,7 +4,7 @@
 
 # ---- 阶段 1: 前端构建 ----
 FROM node:22-alpine AS frontend-builder
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
 WORKDIR /app/lom
 COPY lom/package.json lom/pnpm-lock.yaml lom/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
@@ -13,11 +13,11 @@ RUN pnpm build
 
 # ---- 阶段 2: 后端运行 ----
 FROM node:22-alpine
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
 WORKDIR /app/lomserver
 
 COPY lomserver/package.json lomserver/pnpm-lock.yaml lomserver/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY lomserver/ ./
 RUN npx prisma generate
