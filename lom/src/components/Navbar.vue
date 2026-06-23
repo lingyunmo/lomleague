@@ -2,7 +2,7 @@
   <n-layout-header class="navbar">
     <div class="navbar-container">
       <div class="navbar-logo" @click="router.push({ name: 'Main' })">
-        <img src="/logo.jpg" alt="LOM Logo" class="logo-image" />
+        <img src="/logo.jpg" alt="lom Logo" class="logo-image" />
         <span>lom 联盟</span>
       </div>
 
@@ -10,42 +10,38 @@
         <!-- 主要导航 -->
         <n-button quaternary @click="router.push({ name: 'Main' })">
           <template #icon>
-            <n-icon>
-              <Home/>
-            </n-icon>
+            <n-icon><Home/></n-icon>
           </template>
           首页
         </n-button>
 
         <n-button quaternary @click="router.push({ name: 'Articles' })">
           <template #icon>
-            <n-icon>
-              <Book/>
-            </n-icon>
+            <n-icon><Book/></n-icon>
           </template>
-          技术文章
+          联盟公告
         </n-button>
 
         <n-button quaternary @click="router.push({ name: 'Forums' })">
           <template #icon>
-            <n-icon>
-              <Chatbubbles/>
-            </n-icon>
+            <n-icon><Chatbubbles/></n-icon>
           </template>
           社区论坛
         </n-button>
 
-        <!-- 示例导航 -->
-        <n-dropdown trigger="hover" :options="moreOptions">
-          <n-button quaternary>
-            <template #icon>
-              <n-icon>
-                <Apps/>
-              </n-icon>
-            </template>
-            更多功能
-          </n-button>
-        </n-dropdown>
+        <n-button quaternary @click="router.push({ name: 'About' })">
+          <template #icon>
+            <n-icon><People/></n-icon>
+          </template>
+          曾经的我们
+        </n-button>
+
+        <n-button quaternary @click="goToAnniversary">
+          <template #icon>
+            <n-icon><Gift/></n-icon>
+          </template>
+          周年庆
+        </n-button>
 
         <!-- 通知铃铛（仅登录后） -->
         <n-badge v-if="authStore.token" :value="unreadCount || undefined" :max="99">
@@ -60,19 +56,9 @@
         <div v-if="!authStore.token" class="auth-buttons">
           <n-button quaternary @click="router.push({ name: 'Login' })">
             <template #icon>
-              <n-icon>
-                <LogIn/>
-              </n-icon>
+              <n-icon><LogIn/></n-icon>
             </template>
             登录
-          </n-button>
-          <n-button quaternary @click="router.push({ name: 'Register' })">
-            <template #icon>
-              <n-icon>
-                <PersonAdd/>
-              </n-icon>
-            </template>
-            注册
           </n-button>
         </div>
 
@@ -85,9 +71,7 @@
         >
           <n-button quaternary>
             <template #icon>
-              <n-icon>
-                <PersonCircle/>
-              </n-icon>
+              <n-icon><PersonCircle/></n-icon>
             </template>
             {{ authStore.userDisplayName || '个人中心' }}
           </n-button>
@@ -104,94 +88,24 @@
 import { h, ref, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
+import { NIcon, useMessage, useThemeVars } from 'naive-ui';
 import {
-  NIcon,
-  useMessage,
-  useThemeVars
-} from 'naive-ui';
-import {
-  Home,
-  Book,
-  Chatbubbles,
-  Apps,
-  LogIn,
-  PersonAdd,
-  PersonCircle,
-  Notifications,
-  Code,
-  Mail,
-  LogoNodejs,
-  LogoJavascript,
-  LogoVue,
-  Settings,
-  InformationCircle,
-  Shield,
-  Cloud
+  Home, Book, Chatbubbles, People, Gift,
+  LogIn, PersonCircle, Notifications, Settings,
 } from '@vicons/ionicons5';
 import NotificationDrawer from './NotificationDrawer.vue';
-import api from '../api/api.js';
+import { notificationApi } from '../api/notification.js';
 
 const authStore = useAuthStore();
 const router = useRouter();
 const message = useMessage();
 const themeVars = useThemeVars();
 
-// 图标渲染函数
-const renderIcon = (icon) => () => h(NIcon, { color: themeVars.value.primaryColor }, () => h(icon));
+const goToAnniversary = () => {
+  window.open('https://anniversary.bzlom.cn/', '_blank');
+};
 
-// 更多功能下拉菜单
-const moreOptions = [
-  {
-    label: '技术栈说明',
-    key: 'tech-stack',
-    icon: renderIcon(Code),
-    children: [
-      {
-        label: 'Nodejs 后端',
-        key: 'nodejs',
-        icon: renderIcon(LogoNodejs)
-      },
-      {
-        label: 'JavaScript 核心',
-        key: 'js',
-        icon: renderIcon(LogoJavascript)
-      },
-      {
-        label: 'Vue 3 前端',
-        key: 'vue',
-        icon: renderIcon(LogoVue)
-      }
-    ]
-  },
-  {
-    label: '系统信息',
-    key: 'system',
-    icon: renderIcon(Cloud), // 使用 @vicons/ionicons5 中的 Cloud 图标
-    children: [
-      {
-        label: '服务状态',
-        key: 'status',
-        icon: renderIcon(Shield)
-      },
-      {
-        label: '关于我们',
-        key: 'about',
-        icon: renderIcon(InformationCircle)
-      }
-    ]
-  },
-  {
-    type: 'divider'
-  },
-  {
-    label: '联系我们',
-    key: 'contact',
-    icon: renderIcon(Mail),
-    props: {
-      onClick: () => window.open('admin@bzlom.cn')
-    }
-  }
-];
+const renderIcon = (icon) => () => h(NIcon, { color: themeVars.value.primaryColor }, () => h(icon));
 
 // 用户菜单
 const dropdownOptions = [
@@ -199,21 +113,15 @@ const dropdownOptions = [
     label: '个人资料',
     key: 'profile',
     icon: renderIcon(PersonCircle),
-    props: {
-      onClick: () => router.push({ name: 'Profile' })
-    }
+    props: { onClick: () => router.push({ name: 'Profile' }) }
   },
   {
     label: '账户设置',
     key: 'settings',
     icon: renderIcon(Settings),
-    props: {
-      onClick: () => router.push({ name: 'EditProfile' })
-    }
+    props: { onClick: () => router.push({ name: 'EditProfile' }) }
   },
-  {
-    type: 'divider'
-  },
+  { type: 'divider' },
   {
     label: '退出登录',
     key: 'logout',
@@ -237,7 +145,7 @@ let pollTimer = null;
 const fetchUnreadCount = async () => {
   if (!authStore.token) return;
   try {
-    const res = await api.get('/notifications', { params: { page: 1, pageSize: 1 } });
+    const res = await notificationApi.getNotifications({ page: 1, pageSize: 1 });
     unreadCount.value = res.data.unreadCount || 0;
   } catch { /* ignore */ }
 };
@@ -254,9 +162,9 @@ onUnmounted(() => {
 
 <style scoped>
 .navbar {
-  background: rgba(16, 16, 20, 0.95);
-  backdrop-filter: blur(10px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--color-navbar-bg);
+  backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-bg-inner);
   height: 64px;
   padding: 0 32px;
 }
@@ -280,7 +188,7 @@ onUnmounted(() => {
   & span {
     font-size: 20px;
     font-weight: 800;
-    background: linear-gradient(45deg, #4ecca3, #45b7d1);
+    background: linear-gradient(45deg, var(--color-brand-primary), var(--color-brand-secondary));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
   }
@@ -299,11 +207,10 @@ onUnmounted(() => {
     height: 40px;
     padding: 0 16px;
     border-radius: 8px;
-    transition: background-color 0.2s,
-    transform 0.2s;
+    transition: background-color 0.2s, transform 0.2s;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.05);
+      background: var(--glass-bg);
       transform: translateY(-1px);
     }
   }
@@ -315,7 +222,6 @@ onUnmounted(() => {
   margin-left: 16px;
 }
 
-/* 响应式处理 */
 @media (max-width: 768px) {
   .navbar {
     padding: 0 16px;
@@ -331,9 +237,8 @@ onUnmounted(() => {
   }
 }
 .logo-image {
-  width: 48px; /* 设置图片宽度 */
-  height: 48px; /* 设置图片高度 */
-  border-radius: 50%; /* 将图片设置为圆形（可选） */
-  margin-right: 8px; /* 调整图片与文字的间距 */
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
 }
 </style>

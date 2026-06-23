@@ -9,6 +9,9 @@ export default defineConfig({
         allowedHosts: ["frp-can.com"],
         host: '0.0.0.0',
         port: 5173,
+        fs: {
+            allow: ['..'],
+        },
         proxy: {
             '/api': {
                 target: 'http://localhost:3000',

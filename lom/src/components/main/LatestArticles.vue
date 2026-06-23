@@ -1,6 +1,6 @@
-<template>
+﻿<template>
   <!-- 最新文章卡片 -->
-  <n-card class="latest-articles-card" hoverable title="最新技术文章">
+  <n-card class="latest-articles-card" hoverable title="最新公告">
     <template #header-extra>
       <n-button text @click="router.push({ name: 'Articles' })">
         更多
@@ -58,10 +58,12 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Time, Globe, ArrowForward } from '@vicons/ionicons5';
-import api from '../../api/api.js';
+import { articleApi } from '../../api/article.js';
 import { formatDate } from '../../utils/date.js';
-import router from "@/router/index.js";
+
+const router = useRouter();
 
 // 文章数据
 const articles = ref([]);
@@ -69,13 +71,11 @@ const articles = ref([]);
 // 获取最新文章
 const fetchLatestArticles = async () => {
   try {
-    const response = await api.get('/articles/latest');
+    const response = await articleApi.getLatest();
     articles.value = response.data.map(article => ({
       ...article,
     }));
-  } catch (error) {
-    console.error('获取最新文章失败:', error);
-  }
+  } catch { /* ignore */ }
 };
 
 // 内容截断
@@ -91,9 +91,9 @@ onMounted(() => {
 
 <style scoped>
 .latest-articles-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   margin-bottom: 24px;
 }
 
@@ -106,7 +106,7 @@ onMounted(() => {
 .article-card {
   padding: 16px;
   margin: 8px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-inner);
   border-radius: 12px;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
@@ -123,13 +123,13 @@ onMounted(() => {
 
 .article-title {
   font-size: 1.1em;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   margin-bottom: 8px;
 }
 
 .preview-content {
   font-size: 0.9em;
-  color: #ddd;
+  color: var(--color-text-secondary);
   line-height: 1.6;
   max-height: 72px;
   overflow: hidden;
@@ -137,7 +137,7 @@ onMounted(() => {
 
 .username {
   font-weight: 500;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
 }
 
 .post-time {

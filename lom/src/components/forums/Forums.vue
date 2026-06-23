@@ -49,29 +49,21 @@
 
             <div class="post-meta">
               <p>
-                <n-icon>
-                  <Time />
-                </n-icon>
+                <n-icon><Time /></n-icon>
                 {{ formatDate(post.updatedAt) }}
               </p>
               <p>
-                <n-icon>
-                  <Chatbubbles />
-                </n-icon>
+                <n-icon><Chatbubbles /></n-icon>
                 {{ post._count?.replies || 0 }} 回复
               </p>
             </div>
           </n-space>
 
-              <!-- 地区标签 -->
           <n-tag type="info" round class="post-region">
-            <n-icon>
-              <Globe />
-            </n-icon>
+            <n-icon><Globe /></n-icon>
             {{ post.region || '未知地区' }}
           </n-tag>
 
-          <!-- 删除按钮 -->
           <n-button
             v-if="authStore.user?.id === post.userId || authStore.isAdmin"
             quaternary
@@ -92,14 +84,13 @@
       </n-empty>
 
       <Pagination
-        v-model:page="currentPage"
-        v-model:page-size="pageSize"
+        v-model:page="pagination.page"
+        v-model:page-size="pagination.pageSize"
         :total="totalPosts"
-        @change="fetchPosts"
+        @change="onPageChange"
       />
     </div>
 
-    <!-- 新增帖子弹窗 -->
     <n-modal
         v-model:show="showAddPostModal"
         title="新增帖子"
@@ -116,11 +107,17 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+// ============================================================
+// Forums.vue — 论坛帖子列表
+// Issue #10: 接入 useDebounce + usePaginatedFetch composables
+// ============================================================
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
-import api from '../../api/api.js';
+import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { usePaginatedFetch } from '../../composables/usePaginatedFetch.js';
+import { useDebounce } from '../../composables/useDebounce.js';
 import { formatDate } from '../../utils/date.js';
 import Pagination from '../Pagination.vue';
 import AddForum from './AddForum.vue';
@@ -128,52 +125,37 @@ import { Add, Search, Time, Chatbubbles, Globe, Trash } from '@vicons/ionicons5'
 
 const authStore = useAuthStore();
 const dialog = useDialog();
-
-const posts = ref([]);
-const loading = ref(true);
 const message = useMessage();
 const router = useRouter();
+
+const {
+  data: posts,
+  total: totalPosts,
+  loading,
+  pagination,
+  fetch: fetchPosts,
+  onPageChange,
+} = usePaginatedFetch(
+  (params) => forumApi.getPosts(params),
+  {},
+);
+
+const searchKeyword = ref('');
+const { debounced: debouncedSearch } = useDebounce((keyword) => {
+  fetchPosts({ keyword: keyword || undefined });
+}, 300);
+
+watch(searchKeyword, (val) => {
+  pagination.page = 1;
+  debouncedSearch(val);
+});
+
 const hoveredPost = ref(null);
 const showAddPostModal = ref(false);
 
-const currentPage = ref(1);
-const pageSize = ref(20);
-const totalPosts = ref(0);
-const searchKeyword = ref('');
-const debouncedKeyword = ref('');
-
-let debounceTimer = null;
-watch(searchKeyword, (val) => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    debouncedKeyword.value = val;
-    currentPage.value = 1;
-    fetchPosts();
-  }, 300);
-});
-
-const fetchPosts = async () => {
-  try {
-    const response = await api.get('/forum/posts', {
-      params: {
-        page: currentPage.value,
-        pageSize: pageSize.value,
-        keyword: debouncedKeyword.value || undefined,
-      },
-    });
-    posts.value = response.data.posts;
-    totalPosts.value = response.data.total;
-  } catch (error) {
-    console.error('获取帖子失败:', error);
-    message.error('获取帖子失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
-};
-
 const handlePostCreated = () => {
   showAddPostModal.value = false;
-  currentPage.value = 1;
+  pagination.page = 1;
   fetchPosts();
 };
 
@@ -185,10 +167,10 @@ const confirmDeletePost = (postId) => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await api.delete(`/forum/posts/${postId}`);
+        await forumApi.deletePost(postId);
         message.success('帖子已删除');
         fetchPosts();
-      } catch (error) {
+      } catch {
         message.error('删除失败');
       }
     },
@@ -202,10 +184,6 @@ const viewPost = (postId) => {
 onMounted(() => {
   fetchPosts();
 });
-
-onUnmounted(() => {
-  clearTimeout(debounceTimer);
-});
 </script>
 
 <style scoped>
@@ -213,18 +191,19 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   padding: 40px;
-  background: linear-gradient(135deg, #141e30, #243b55);
+  min-height: 100%;
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
 }
 
 .forums-wrapper {
   width: 100%;
   max-width: 1200px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: var(--glass-bg);
+  border-radius: var(--glass-radius-sm);
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .forums-header {
@@ -247,7 +226,7 @@ onUnmounted(() => {
 }
 
 .forums-title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   font-size: 24px;
 }
 
@@ -259,15 +238,15 @@ onUnmounted(() => {
   position: relative;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  background: var(--glass-bg);
+  transition: var(--transition-card);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-subtle);
 }
 
 .post-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-medium);
 }
 
 .post-user-info {
@@ -279,7 +258,7 @@ onUnmounted(() => {
 .post-username {
   font-size: 18px;
   font-weight: bold;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
 }
 
 .post-content {
@@ -289,7 +268,7 @@ onUnmounted(() => {
 
 .post-text {
   font-size: 14px;
-  color: #ccc;
+  color: var(--color-text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -297,19 +276,19 @@ onUnmounted(() => {
 
 .post-meta {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
   text-align: right;
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
-/* 修正后的地区标签样式 */
 .post-region {
   position: absolute;
   right: 12px;
   bottom: 12px;
 }
+
 .delete-btn {
   position: absolute;
   top: 8px;

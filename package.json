@@ -1,0 +1,21 @@
+{
+  "name": "lomleague",
+  "private": true,
+  "version": "1.0.0",
+  "description": "lom 联盟 — Legacy Of Minecraft League",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter lomserver dev\" \"pnpm --filter lom dev\"",
+    "build": "pnpm --filter lom build",
+    "start": "pnpm --filter lomserver start",
+    "deploy": "pnpm build",
+    "db:migrate": "pnpm --filter lomserver db:migrate",
+    "db:studio": "pnpm --filter lomserver db:studio",
+    "lint": "eslint . --ext .js,.vue --ignore-pattern dist --ignore-pattern node_modules",
+    "format": "prettier --write \"**/*.{js,json,css,vue,md}\" --ignore-path .gitignore"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.4.0"
+  }
+}

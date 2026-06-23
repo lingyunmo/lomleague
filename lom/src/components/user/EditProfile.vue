@@ -4,14 +4,8 @@
       <h2 class="title">编辑个人资料</h2>
 
       <n-form :model="form" :rules="rules" ref="formRef" label-placement="left" label-width="100">
-        <!-- 头像上传 -->
         <n-form-item label="头像" class="custom-upload-item">
-          <n-upload
-              :custom-request="customUpload"
-              accept="image/*"
-              :max="1"
-              list-type="text"
-          >
+          <n-upload :custom-request="customUpload" accept="image/*" :max="1" list-type="text">
             <n-avatar
                 round
                 :size="128"
@@ -21,44 +15,20 @@
           </n-upload>
         </n-form-item>
 
-        <!-- 用户名 -->
         <n-form-item label="用户名" path="username">
-          <n-input
-              v-model:value="form.username"
-              placeholder="请输入用户名"
-              class="custom-input"
-          />
+          <n-input v-model:value="form.username" placeholder="请输入用户名" class="custom-input" />
         </n-form-item>
 
-        <!-- 邮箱 -->
         <n-form-item label="邮箱" path="email">
-          <n-input
-              v-model:value="form.email"
-              placeholder="请输入邮箱"
-              class="custom-input"
-          />
+          <n-input v-model:value="form.email" placeholder="请输入邮箱" class="custom-input" />
         </n-form-item>
 
-        <!-- 最后登录地区 -->
         <n-form-item label="登录地区">
-          <n-input
-              v-model:value="form.lastLoginRegion.region"
-              placeholder="自动获取地区信息"
-              disabled
-              class="custom-input"
-          />
+          <n-input v-model:value="form.lastLoginRegion.region" placeholder="自动获取地区信息" disabled class="custom-input" />
         </n-form-item>
 
-        <!-- 提交按钮 -->
         <n-form-item class="submit-item">
-          <n-button
-              type="primary"
-              @click="handleSubmit"
-              block
-              class="submit-btn"
-          >
-            保存更改
-          </n-button>
+          <n-button type="primary" @click="handleSubmit" block class="submit-btn">保存更改</n-button>
         </n-form-item>
       </n-form>
 
@@ -87,10 +57,15 @@
 </template>
 
 <script setup>
+/**
+ * EditProfile — 编辑个人资料
+ * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
+ */
 import { ref, reactive, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
-import api from '../../api/api.js';
+import { userApi } from '../../api/user.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useFileUpload } from '../../composables/useFileUpload.js';
 
 const authStore = useAuthStore();
 const loading = ref(true);
@@ -102,6 +77,13 @@ const form = reactive({
   username: '',
   email: '',
   lastLoginRegion: { region: '', ip: '' },
+});
+
+// 头像上传（单文件）
+const avatarUrl = ref(form.avatar);
+const avatarFileList = ref([]);
+const { customUpload } = useFileUpload(avatarUrl, avatarFileList, {
+  allowedTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp'],
 });
 
 const passwordForm = reactive({
@@ -128,11 +110,12 @@ const fetchUserInfo = async () => {
     const data = await authStore.fetchUser();
     if (data) {
       Object.assign(form, {
-        avatar: data.avatar,
-        username: data.username,
-        email: data.email,
+        avatar: data.avatar || '',
+        username: data.username || '',
+        email: data.email || '',
         lastLoginRegion: data.lastLoginRegion || { region: '', ip: '' },
       });
+      avatarUrl.value = form.avatar;
     }
   } catch {
     message.error('获取用户信息失败，请稍后重试');
@@ -141,16 +124,16 @@ const fetchUserInfo = async () => {
   }
 };
 
-// 提交编辑
 const handleSubmit = () => {
   formRef.value.validate(async (errors) => {
     if (!errors) {
       try {
-        await api.put('/user/update', {
-          avatar: form.avatar,
+        await userApi.updateProfile({
+          avatar: avatarUrl.value || form.avatar,
           username: form.username,
           email: form.email,
         });
+        form.avatar = avatarUrl.value;
         message.success('资料更新成功');
       } catch (error) {
         message.error('更新失败，请稍后重试');
@@ -159,27 +142,6 @@ const handleSubmit = () => {
       message.error('请修正表单中的错误');
     }
   });
-};
-
-// 自定义上传逻辑
-const customUpload = async ({ file, onFinish, onError }) => {
-  try {
-    const formData = new FormData();
-    formData.append('file', file.file);
-
-    const response = await api.post('/file/upload', formData);
-
-    if (response.data && response.data.url) {
-      form.avatar = response.data.url;
-      message.success('头像上传成功');
-      onFinish();
-    } else {
-      throw new Error('上传失败');
-    }
-  } catch (error) {
-    message.error('头像上传失败');
-    onError();
-  }
 };
 
 const handleChangePassword = () => {
@@ -191,10 +153,7 @@ const handleChangePassword = () => {
       }
       changingPassword.value = true;
       try {
-        await api.put('/user/change-password', {
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
-        });
+        await userApi.changePassword(passwordForm.oldPassword, passwordForm.newPassword);
         message.success('密码修改成功');
         Object.assign(passwordForm, { oldPassword: '', newPassword: '', confirmPassword: '' });
       } catch (error) {
@@ -212,27 +171,26 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 保持原有动画和容器样式 */
 .edit-profile-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #141e30, #243b55) fixed;
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end)) fixed;
   animation: fadeIn 1s ease-in-out;
 }
-/* 卡片样式统一 */
+
 .edit-profile-card {
   width: 480px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: var(--glass-bg);
+  border-radius: var(--glass-radius);
   padding: 32px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   font-size: 24px;
   font-weight: bold;
   text-align: center;
@@ -240,51 +198,47 @@ onMounted(() => {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* 上传组件样式优化 */
 .custom-upload-item {
   margin-bottom: 24px;
-
-  :deep(.n-upload) {
-    display: flex;
-    justify-content: center;
-  }
-
-  .profile-avatar {
-    border: 3px solid #4ecca3;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
-    transition: transform 0.2s ease;
-
-    &:hover {
-      transform: scale(1.05);
-    }
-  }
 }
 
-/* 输入框统一样式 */
+.custom-upload-item :deep(.n-upload) {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-avatar {
+  border: 3px solid var(--color-brand-primary);
+  box-shadow: var(--shadow-avatar);
+  transition: transform 0.2s ease;
+}
+
+.profile-avatar:hover {
+  transform: scale(1.05);
+}
+
 .custom-input {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-inner);
+  border: 1px solid var(--glass-border);
   border-radius: 8px;
-  color: #fff;
-  transition: all 0.3s ease;
-
-  &:hover {
-    border-color: #4ecca3;
-  }
-
-  &:focus {
-    border-color: #4ecca3;
-    box-shadow: 0 0 0 2px rgba(78, 204, 163, 0.2);
-  }
+  color: var(--color-text-primary);
+  transition: var(--transition-smooth);
 }
 
-/* 表单标签样式 */
+.custom-input:hover,
+.custom-input:focus {
+  border-color: var(--color-brand-primary);
+}
+
+.custom-input:focus {
+  box-shadow: var(--shadow-glow-brand);
+}
+
 :deep(.n-form-item-label) {
-  color: #bbb !important;
+  color: var(--color-text-label) !important;
   font-size: 14px;
 }
 
-/* 提交按钮样式 */
 .submit-item {
   margin-top: 24px;
 }
@@ -293,13 +247,13 @@ onMounted(() => {
   height: 42px;
   font-size: 16px;
   border-radius: 8px;
-  background-color: #4ecca3;
-  transition: all 0.3s ease;
+  background-color: var(--color-brand-primary);
+  transition: var(--transition-smooth);
+}
 
-  &:hover {
-    background-color: #45b893;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(78, 204, 163, 0.3);
-  }
+.submit-btn:hover {
+  background-color: var(--color-brand-primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(78, 204, 163, 0.3);
 }
 </style>

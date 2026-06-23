@@ -1,95 +1,81 @@
+/**
+ * 文章路由 — 薄层，只做：参数提取 → 调 Service → 响应
+ * 解决 Issue #1 #3 #4: 验证/权限在中间件，业务在 Service，错误在 errorHandler
+ * 注意：文章操作仅限管理员
+ */
 import express from 'express';
-import ArticleDAO from '../dao/ArticleDAO.js';
 import { authMiddleware, isAdmin } from '../middleware/authMiddleware.js';
+import validate from '../middleware/validate.js';
+import asyncHandler from '../middleware/asyncHandler.js';
+import ArticleService from '../services/articleService.js';
+import { z } from 'zod';
 
 const router = express.Router();
 
-// GET / — paginated article list with search
-router.get('/', async (req, res) => {
-    try {
-        const page = Math.max(1, parseInt(req.query.page) || 1);
-        const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
-        const keyword = req.query.keyword || '';
-        const result = await ArticleDAO.getAllArticles(page, pageSize, keyword);
-        res.json(result);
-    } catch (error) {
-        console.error('Error fetching articles:', error);
-        res.status(500).json({ message: 'Failed to fetch articles' });
-    }
+// ==================== 验证 Schema ====================
+
+const articleSchema = z.object({
+  title: z.string().min(1, '标题不能为空'),
+  content: z.string().min(1, '内容不能为空'),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// GET /latest — latest articles
-router.get('/latest', async (req, res) => {
-    try {
-        const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
-        const latestArticles = await ArticleDAO.getLatestArticles(limit);
-        res.json(latestArticles);
-    } catch (error) {
-        console.error('Error fetching latest articles:', error);
-        res.status(500).json({ message: 'Failed to fetch latest articles' });
-    }
+const articleUpdateSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// GET /:id — single article detail
-router.get('/:id', async (req, res) => {
-    const articleId = parseInt(req.params.id, 10);
-    try {
-        const article = await ArticleDAO.getArticleById(articleId);
-        if (!article) {
-            return res.status(404).json({ message: 'Article not found' });
-        }
-        res.json(article);
-    } catch (error) {
-        console.error('Error fetching article:', error);
-        res.status(500).json({ message: 'Failed to fetch article' });
-    }
-});
+// ==================== 公开路由 ====================
 
-// POST / — create article (admin required)
-router.post('/', authMiddleware, isAdmin, async (req, res) => {
-    const { title, content, attachments, region } = req.body;
+// GET / — 分页文章列表
+router.get('/', asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
+  const keyword = req.query.keyword || '';
+  const result = await ArticleService.getArticles(page, pageSize, keyword);
+  res.json(result);
+}));
 
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Title and content are required' });
-    }
+// GET /latest — 最新文章
+router.get('/latest', asyncHandler(async (req, res) => {
+  const limit = Math.min(20, Math.max(1, parseInt(req.query.limit) || 5));
+  const articles = await ArticleService.getLatestArticles(limit);
+  res.json(articles);
+}));
 
-    try {
-        const newArticle = await ArticleDAO.createArticle({
-            title, content, attachments, region, userId: req.user.id,
-        });
-        res.status(201).json(newArticle);
-    } catch (error) {
-        console.error('Error creating article:', error);
-        res.status(500).json({ message: 'Failed to create article' });
-    }
-});
+// GET /:id — 文章详情
+router.get('/:id', asyncHandler(async (req, res) => {
+  const articleId = parseInt(req.params.id, 10);
+  const article = await ArticleService.getArticle(articleId);
+  res.json(article);
+}));
 
-// PUT /:id — update article (admin required)
-router.put('/:id', authMiddleware, isAdmin, async (req, res) => {
-    const articleId = parseInt(req.params.id, 10);
-    const { title, content, attachments, region } = req.body;
+// ==================== 管理员路由 ====================
 
-    try {
-        const updatedArticle = await ArticleDAO.updateArticle(articleId, {
-            title, content, attachments, region,
-        });
-        res.json(updatedArticle);
-    } catch (error) {
-        console.error('Error updating article:', error);
-        res.status(500).json({ message: 'Failed to update article' });
-    }
-});
+// POST / — 创建文章（仅管理员）
+router.post('/', authMiddleware, isAdmin, validate(articleSchema), asyncHandler(async (req, res) => {
+  const article = await ArticleService.createArticle({
+    ...req.body,
+    userId: req.user.id,
+  });
+  res.status(201).json(article);
+}));
 
-// DELETE /:id — delete article (admin required)
-router.delete('/:id', authMiddleware, isAdmin, async (req, res) => {
-    const articleId = parseInt(req.params.id, 10);
-    try {
-        await ArticleDAO.deleteArticle(articleId);
-        res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting article:', error);
-        res.status(500).json({ message: 'Failed to delete article' });
-    }
-});
+// PUT /:id — 更新文章（仅管理员）
+router.put('/:id', authMiddleware, isAdmin, validate(articleUpdateSchema), asyncHandler(async (req, res) => {
+  const articleId = parseInt(req.params.id, 10);
+  const updated = await ArticleService.updateArticle(articleId, req.body);
+  res.json(updated);
+}));
+
+// DELETE /:id — 删除文章（仅管理员）
+router.delete('/:id', authMiddleware, isAdmin, asyncHandler(async (req, res) => {
+  const articleId = parseInt(req.params.id, 10);
+  await ArticleService.deleteArticle(articleId);
+  res.status(204).send();
+}));
 
 export default router;

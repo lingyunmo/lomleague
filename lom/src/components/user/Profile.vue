@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="profile-container" v-if="!loading">
     <n-card :bordered="false" class="profile-card" hoverable>
       <div class="profile-header">
@@ -27,8 +27,8 @@
           column="1"
           label-placement="left"
           size="large"
-          label-style="color: #bbb;"
-          content-style="color: #fff;">
+          label-style="color: var(--color-text-label);"
+          content-style="color: var(--color-text-primary);">
         <n-descriptions-item label="金币">✨ {{ user.goldCoins }}</n-descriptions-item>
         <n-descriptions-item label="注册日期">{{ formatDate(user.createdAt) }}</n-descriptions-item>
         <n-descriptions-item label="最近更新">{{ formatDate(user.updatedAt) }}</n-descriptions-item>
@@ -53,17 +53,7 @@ const authStore = useAuthStore();
 const loading = ref(true);
 const message = useMessage();
 
-const user = computed(() => {
-  const data = authStore.user;
-  if (!data) return {};
-  return {
-    ...data,
-    goldCoins: data.gold_coins,
-    createdAt: data.created_at,
-    updatedAt: data.updated_at,
-    id: data.id,
-  };
-});
+const user = computed(() => authStore.user || {});
 
 onMounted(async () => {
   await authStore.fetchUser();
@@ -80,16 +70,16 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background: linear-gradient(135deg, #141e30, #243b55);
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
 }
 .profile-card {
   width: 450px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 16px;
   padding: 24px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .profile-header {
@@ -99,25 +89,25 @@ onMounted(async () => {
 }
 
 .profile-avatar {
-  border: 3px solid #4ecca3;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+  border: 3px solid var(--color-brand-primary);
+  box-shadow: var(--shadow-avatar);
 }
 
 .profile-info {
   margin-left: 20px;
-  color: #fff;
+  color: var(--color-text-primary);
 }
 
 .username {
   font-size: 24px;
   font-weight: bold;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
 }
 
 .email,
 .last-login {
   font-size: 14px;
-  color: #bbb;
+  color: var(--color-text-label);
   margin-top: 6px;
 }
 

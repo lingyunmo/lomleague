@@ -1,33 +1,7 @@
-import axios from 'axios';
-import { isTokenExpired } from './utils.js';
-
-const api = axios.create({
-    baseURL: '/api',
-});
-
-api.interceptors.request.use(config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-        if (isTokenExpired(token)) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-        } else {
-            config.headers.Authorization = `Bearer ${token}`;
-        }
-    }
-    return config;
-}, error => Promise.reject(error));
-
-api.interceptors.response.use(
-    response => response,
-    error => {
-        if ([401, 403].includes(error.response?.status)) {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            window.location.href = '/login';
-        }
-        return Promise.reject(error);
-    }
-);
-
-export default api;
+/**
+ * 向后兼容 — 重新导出 client 实例
+ *
+ * 新代码应使用 api/ 目录下的模块化 API（user.js, forum.js, article.js, like.js, notification.js, file.js）
+ * @deprecated 请使用新的 API 模块导入（如 import { forumApi } from '../api/forum.js'）
+ */
+export { default } from './client.js';

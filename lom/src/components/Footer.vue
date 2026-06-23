@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <n-layout-footer class="footer">
     <div class="footer-content">
       <p>© 2014-2026 lom league. All rights reserved.</p>
@@ -8,10 +8,10 @@
 
 <style scoped>
 .footer {
-  background-color: #1e1e28;
+  background-color: var(--color-footer-bg);
   padding: 16px 0;
   text-align: center;
-  color: #ddd;
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 

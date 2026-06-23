@@ -1,173 +1,111 @@
+/**
+ * 论坛路由 — 薄层，只做：参数提取 → 调 Service → 响应
+ * 解决 Issue #1 #3 #4 #6: 权限交给 requireOwner 中间件，错误交给 errorHandler
+ */
 import express from 'express';
+import { authMiddleware } from '../middleware/authMiddleware.js';
+import validate from '../middleware/validate.js';
+import asyncHandler from '../middleware/asyncHandler.js';
+import requireOwner from '../middleware/requireOwner.js';
+import ForumService from '../services/forumService.js';
 import ForumDAO from '../dao/forumDao.js';
 import ReplyDAO from '../dao/replyDao.js';
-import NotificationDao from '../dao/notificationDao.js';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { z } from 'zod';
 
 const router = express.Router();
 
-// GET /posts — paginated post list with search
-router.get('/posts', async (req, res) => {
-    try {
-        const page = Math.max(1, parseInt(req.query.page) || 1);
-        const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
-        const keyword = req.query.keyword || '';
-        const result = await ForumDAO.getAllPosts(page, pageSize, keyword);
-        res.json(result);
-    } catch (error) {
-        console.error('Error fetching posts:', error);
-        res.status(500).json({ message: 'Failed to fetch posts' });
-    }
+// ==================== 验证 Schema ====================
+
+const createPostSchema = z.object({
+  title: z.string().min(1, '标题不能为空'),
+  content: z.string().min(1, '内容不能为空'),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// GET /posts/:id — single post detail
-router.get('/posts/:id', async (req, res) => {
-    const postId = parseInt(req.params.id, 10);
-    try {
-        const post = await ForumDAO.getPostById(postId);
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-        res.json(post);
-    } catch (error) {
-        console.error('Error fetching post:', error);
-        res.status(500).json({ message: 'Failed to fetch post' });
-    }
+const updatePostSchema = z.object({
+  title: z.string().optional(),
+  content: z.string().optional(),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// POST /posts — create post (auth required)
-router.post('/posts', authMiddleware, async (req, res) => {
-    const { title, content, attachments, region } = req.body;
-    const userId = req.user.id;
-
-    if (!title || !content) {
-        return res.status(400).json({ message: 'Title and content are required' });
-    }
-
-    try {
-        const newPost = await ForumDAO.createPost({
-            userId, title, content, attachments, region,
-        });
-        res.status(201).json(newPost);
-    } catch (error) {
-        console.error('Error creating post:', error);
-        res.status(500).json({ message: 'Failed to create post' });
-    }
+const createReplySchema = z.object({
+  postId: z.number().int().positive(),
+  content: z.string().min(1, '内容不能为空'),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// PUT /posts/:id — update post (auth required, ownership or admin)
-router.put('/posts/:id', authMiddleware, async (req, res) => {
-    const postId = parseInt(req.params.id, 10);
-    const { title, content, attachments, region } = req.body;
-    try {
-        const post = await ForumDAO.getPostById(postId);
-        if (!post) return res.status(404).json({ message: 'Post not found' });
-        if (post.userId !== req.user.id && !req.user.is_admin)
-            return res.status(403).json({ message: 'Not authorized' });
-        const updated = await ForumDAO.updatePost(postId, { title, content, attachments, region });
-        res.json(updated);
-    } catch (error) {
-        console.error('Error updating post:', error);
-        res.status(500).json({ message: 'Failed to update post' });
-    }
+const updateReplySchema = z.object({
+  content: z.string().optional(),
+  attachments: z.any().optional(),
+  region: z.string().optional(),
 });
 
-// DELETE /posts/:id — delete post (auth required, ownership or admin)
-router.delete('/posts/:id', authMiddleware, async (req, res) => {
-    const postId = parseInt(req.params.id, 10);
-    try {
-        const post = await ForumDAO.getPostById(postId);
-        if (!post) {
-            return res.status(404).json({ message: 'Post not found' });
-        }
-        if (post.userId !== req.user.id && !req.user.is_admin) {
-            return res.status(403).json({ message: 'Not authorized to delete this post' });
-        }
-        await ForumDAO.deletePost(postId);
-        res.status(204).send();
-    } catch (error) {
-        console.error('Error deleting post:', error);
-        res.status(500).json({ message: 'Failed to delete post' });
-    }
-});
+// ==================== 帖子路由 ====================
 
-// POST /replies — create reply (auth required)
-router.post('/replies', authMiddleware, async (req, res) => {
-    const { postId, content, attachments, region } = req.body;
-    const userId = req.user.id;
+// GET /posts — 分页列表
+router.get('/posts', asyncHandler(async (req, res) => {
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
+  const keyword = req.query.keyword || '';
+  const result = await ForumService.getPosts(page, pageSize, keyword);
+  res.json(result);
+}));
 
-    try {
-        const reply = await ReplyDAO.createReply({
-            postId, userId, content, attachments, region,
-        });
+// GET /posts/:id — 帖子详情
+router.get('/posts/:id', asyncHandler(async (req, res) => {
+  const postId = parseInt(req.params.id, 10);
+  const post = await ForumService.getPost(postId);
+  res.json(post);
+}));
 
-        // 通知帖子作者
-        const post = await ForumDAO.getPostById(postId);
-        if (post && post.userId !== userId) {
-            await NotificationDao.create({
-                userId: post.userId,
-                type: 'reply',
-                content: `${req.user.username} 回复了你的帖子「${post.title}」`,
-                entityType: 'post',
-                entityId: postId,
-            });
-        }
+// POST /posts — 创建帖子
+router.post('/posts', authMiddleware, validate(createPostSchema), asyncHandler(async (req, res) => {
+  const post = await ForumService.createPost(req.user.id, req.body);
+  res.status(201).json(post);
+}));
 
-        res.status(201).json(reply);
-    } catch (error) {
-        console.error('创建回复失败:', error);
-        res.status(500).json({ message: '创建回复失败，请稍后重试' });
-    }
-});
+// PUT /posts/:id — 更新帖子（所有者或管理员）
+router.put('/posts/:id', authMiddleware, requireOwner(ForumDAO.getPostById), validate(updatePostSchema), asyncHandler(async (req, res) => {
+  const updated = await ForumService.updatePost(req.entity.id, req.body);
+  res.json(updated);
+}));
 
-// GET /replies/:postId — paginated replies for a post
-router.get('/replies/:postId', async (req, res) => {
-    const postId = parseInt(req.params.postId, 10);
-    const page = Math.max(1, parseInt(req.query.page) || 1);
-    const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
-    try {
-        const result = await ReplyDAO.getRepliesByPostId(postId, page, pageSize);
-        res.json(result);
-    } catch (error) {
-        console.error('获取回复失败:', error);
-        res.status(500).json({ message: '获取回复失败，请稍后重试' });
-    }
-});
+// DELETE /posts/:id — 删除帖子（所有者或管理员）
+router.delete('/posts/:id', authMiddleware, requireOwner(ForumDAO.getPostById), asyncHandler(async (req, res) => {
+  await ForumService.deletePost(req.entity.id);
+  res.status(204).send();
+}));
 
-// PUT /replies/:replyId — update reply (auth required, ownership or admin)
-router.put('/replies/:replyId', authMiddleware, async (req, res) => {
-    const replyId = parseInt(req.params.replyId, 10);
-    const { content, attachments, region } = req.body;
-    try {
-        const reply = await ReplyDAO.getReplyById(replyId);
-        if (!reply) return res.status(404).json({ message: 'Reply not found' });
-        if (reply.userId !== req.user.id && !req.user.is_admin)
-            return res.status(403).json({ message: 'Not authorized' });
-        const updated = await ReplyDAO.updateReply(replyId, { content, attachments, region });
-        res.json(updated);
-    } catch (error) {
-        console.error('Error updating reply:', error);
-        res.status(500).json({ message: 'Failed to update reply' });
-    }
-});
+// ==================== 回复路由 ====================
 
-// DELETE /replies/:replyId — delete reply (auth required, ownership or admin)
-router.delete('/replies/:replyId', authMiddleware, async (req, res) => {
-    const replyId = parseInt(req.params.replyId, 10);
-    try {
-        const reply = await ReplyDAO.getReplyById(replyId);
-        if (!reply) {
-            return res.status(404).json({ message: '回复不存在' });
-        }
-        if (reply.userId !== req.user.id && !req.user.is_admin) {
-            return res.status(403).json({ message: '没有权限删除此回复' });
-        }
-        await ReplyDAO.deleteReply(replyId);
-        res.status(204).send();
-    } catch (error) {
-        console.error('删除回复失败:', error);
-        res.status(500).json({ message: '删除回复失败，请稍后重试' });
-    }
-});
+// GET /replies/:postId — 帖子的回复列表
+router.get('/replies/:postId', asyncHandler(async (req, res) => {
+  const postId = parseInt(req.params.postId, 10);
+  const page = Math.max(1, parseInt(req.query.page) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize) || 20));
+  const result = await ForumService.getReplies(postId, page, pageSize);
+  res.json(result);
+}));
+
+// POST /replies — 创建回复
+router.post('/replies', authMiddleware, validate(createReplySchema), asyncHandler(async (req, res) => {
+  const reply = await ForumService.createReply(req.user.id, req.user.username, req.body);
+  res.status(201).json(reply);
+}));
+
+// PUT /replies/:replyId — 更新回复（所有者或管理员）
+router.put('/replies/:replyId', authMiddleware, requireOwner(ReplyDAO.getReplyById, 'replyId'), validate(updateReplySchema), asyncHandler(async (req, res) => {
+  const updated = await ForumService.updateReply(req.entity.id, req.body);
+  res.json(updated);
+}));
+
+// DELETE /replies/:replyId — 删除回复（所有者或管理员）
+router.delete('/replies/:replyId', authMiddleware, requireOwner(ReplyDAO.getReplyById, 'replyId'), asyncHandler(async (req, res) => {
+  await ForumService.deleteReply(req.entity.id);
+  res.status(204).send();
+}));
 
 export default router;

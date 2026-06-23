@@ -1,0 +1,42 @@
+# lom 联盟 · 生产环境
+# 镜像由 CI 构建并推送到 GHCR，服务器拉取运行
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lom-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME:-lom}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/${GH_USER}/lomleague:latest
+    container_name: lom-app
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mysql://root:${DB_PASSWORD}@mysql:3306/${DB_NAME:-lom}
+    networks:
+      - default
+      - common-net
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+volumes:
+  mysql_data:
+
+networks:
+  default:
+  common-net:
+    external: true

@@ -45,10 +45,15 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+/**
+ * AddArticle — 创建文章表单
+ * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
+ */
+import { ref, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
-import api from '../../api/api.js';
+import { articleApi } from '../../api/article.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useFileUpload } from '../../composables/useFileUpload.js';
 
 const emit = defineEmits(['created', 'cancel']);
 const message = useMessage();
@@ -58,14 +63,15 @@ const formData = ref({
   title: '',
   region: '',
   content: '',
-  attachments: [],
 });
 
+const attachments = ref([]);
 const defaultFileList = ref([]);
 const submitting = ref(false);
 const formRef = ref(null);
 
-// 校验规则
+const { customUpload, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
+
 const rules = {
   title: [{ required: true, message: '标题不能为空', trigger: 'blur' }],
   content: [
@@ -78,77 +84,16 @@ const rules = {
   ],
 };
 
-// 支持的文件类型
-const allowedTypes = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'audio/mpeg', 'audio/wav',
-  'video/mp4', 'video/x-msvideo',
-  'application/zip', 'application/x-rar-compressed'
-];
-
-// 最大文件大小 (10MB)
-const MAX_FILE_SIZE = 10 * 1024 * 1024;
-
-// 判断附件是否上传完成
-const isReadyToSubmit = computed(() => {
-  return formData.value.attachments.length === defaultFileList.value.length;
-});
-
-// 自定义上传逻辑
-const customUpload = async ({ file, onFinish, onError }) => {
-  try {
-    if (!allowedTypes.includes(file.file.type)) {
-      message.error('不支持的文件类型！');
-      return onError();
-    }
-
-    if (file.file.size > MAX_FILE_SIZE) {
-      message.error('文件大小不能超过 10MB！');
-      return onError();
-    }
-
-    const form = new FormData();
-    form.append('file', file.file);
-
-    const response = await api.post('/file/upload', form);
-
-    if (response.data?.url) {
-      formData.value.attachments.push(response.data.url);
-      defaultFileList.value.push({
-        uid: file.uid,
-        name: file.file.name,
-        url: response.data.url,
-        status: 'finished',
-      });
-      message.success('附件上传成功');
-      onFinish();
-    } else {
-      throw new Error('上传失败');
-    }
-  } catch (error) {
-    message.error('附件上传失败');
-    onError();
-  }
-};
-
-// 移除附件
-const handleRemove = (file) => {
-  formData.value.attachments = formData.value.attachments.filter((url) => url !== file.url);
-  defaultFileList.value = defaultFileList.value.filter((item) => item.url !== file.url);
-  message.info('附件已移除');
-};
-
-// 提交表单
 const handleSubmit = async () => {
   try {
     submitting.value = true;
     await formRef.value?.validate();
 
-    await api.post('/articles', {
+    await articleApi.createArticle({
       title: formData.value.title,
       content: formData.value.content,
       region: formData.value.region,
-      attachments: formData.value.attachments,
+      attachments: attachments.value,
     });
 
     message.success('文章创建成功！');
@@ -161,14 +106,13 @@ const handleSubmit = async () => {
   }
 };
 
-// 重置表单
 const resetForm = () => {
   formData.value = {
     title: '',
     content: '',
     region: formData.value.region,
-    attachments: [],
   };
+  attachments.value = [];
   defaultFileList.value = [];
 };
 

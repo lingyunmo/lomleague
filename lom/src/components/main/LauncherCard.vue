@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <n-card class="download-card" hoverable title="Minecraft第三方启动器">
     <n-space vertical>
       <n-button
@@ -73,17 +73,17 @@ const openExternal = (url) => {
 
 <style scoped>
 .download-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--glass-bg-dark);
   transition: all 0.3s ease;
 }
 
 .download-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px var(--glass-bg-darker);
 }
 
 .n-button {

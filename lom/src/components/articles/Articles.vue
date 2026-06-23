@@ -45,13 +45,9 @@
 
             <div class="article-meta">
               <n-space align="center" :size="8">
-                <n-icon>
-                  <Time />
-                </n-icon>
+                <n-icon><Time /></n-icon>
                 <span>{{ formatDate(article.updatedAt) }}</span>
-                <n-icon>
-                  <Globe />
-                </n-icon>
+                <n-icon><Globe /></n-icon>
                 <span>{{ article.region || '未知地区' }}</span>
                 <div class="article-author">
                   <img
@@ -65,7 +61,6 @@
             </div>
           </n-space>
 
-          <!-- 删除按钮 -->
           <n-button
             v-if="authStore.isAdmin"
             quaternary
@@ -79,21 +74,20 @@
         </n-card>
       </n-space>
 
-      <n-empty v-if="!loading && articles.length === 0" description="暂无文章" class="empty-state">
+      <n-empty v-if="articles.length === 0" description="暂无文章" class="empty-state">
         <template #extra>
           <n-button v-if="authStore.isAdmin" @click="showAddArticleModal = true">发布第一篇文章</n-button>
         </template>
       </n-empty>
 
       <Pagination
-        v-model:page="currentPage"
-        v-model:page-size="pageSize"
+        v-model:page="pagination.page"
+        v-model:page-size="pagination.pageSize"
         :total="totalArticles"
-        @change="fetchArticles"
+        @change="onPageChange"
       />
     </div>
 
-    <!-- 新增文章弹窗 -->
     <n-modal
         v-model:show="showAddArticleModal"
         title="新增文章"
@@ -110,11 +104,17 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted } from 'vue';
+// ============================================================
+// Articles.vue — 文章列表
+// Issue #10: 接入 useDebounce + usePaginatedFetch composables
+// ============================================================
+import { ref, watch, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
-import api from '../../api/api.js';
+import { articleApi } from '../../api/article.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { usePaginatedFetch } from '../../composables/usePaginatedFetch.js';
+import { useDebounce } from '../../composables/useDebounce.js';
 import { formatDate } from '../../utils/date.js';
 import Pagination from '../Pagination.vue';
 import AddArticle from './AddArticle.vue';
@@ -122,52 +122,37 @@ import { Add, Search, Time, Globe, Trash } from '@vicons/ionicons5';
 
 const authStore = useAuthStore();
 const dialog = useDialog();
-
-const router = useRouter();
-const articles = ref([]);
-const loading = ref(true);
 const message = useMessage();
+const router = useRouter();
+
+const {
+  data: articles,
+  total: totalArticles,
+  loading,
+  pagination,
+  fetch: fetchArticles,
+  onPageChange,
+} = usePaginatedFetch(
+  (params) => articleApi.getArticles(params),
+  {},
+);
+
+const searchKeyword = ref('');
+const { debounced: debouncedSearch } = useDebounce((keyword) => {
+  fetchArticles({ keyword: keyword || undefined });
+}, 300);
+
+watch(searchKeyword, (val) => {
+  pagination.page = 1;
+  debouncedSearch(val);
+});
+
 const hoveredArticle = ref(null);
 const showAddArticleModal = ref(false);
 
-const currentPage = ref(1);
-const pageSize = ref(20);
-const totalArticles = ref(0);
-const searchKeyword = ref('');
-const debouncedKeyword = ref('');
-
-let debounceTimer = null;
-watch(searchKeyword, (val) => {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => {
-    debouncedKeyword.value = val;
-    currentPage.value = 1;
-    fetchArticles();
-  }, 300);
-});
-
-const fetchArticles = async () => {
-  try {
-    const response = await api.get('/articles', {
-      params: {
-        page: currentPage.value,
-        pageSize: pageSize.value,
-        keyword: debouncedKeyword.value || undefined,
-      },
-    });
-    articles.value = response.data.articles;
-    totalArticles.value = response.data.total;
-  } catch (error) {
-    console.error('获取文章失败:', error);
-    message.error('获取文章失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
-};
-
 const handleArticleCreated = () => {
   showAddArticleModal.value = false;
-  currentPage.value = 1;
+  pagination.page = 1;
   fetchArticles();
 };
 
@@ -179,10 +164,10 @@ const confirmDeleteArticle = (articleId) => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await api.delete(`/articles/${articleId}`);
+        await articleApi.deleteArticle(articleId);
         message.success('文章已删除');
         fetchArticles();
-      } catch (error) {
+      } catch {
         message.error('删除失败');
       }
     },
@@ -196,10 +181,6 @@ const viewArticle = (article) => {
 onMounted(() => {
   fetchArticles();
 });
-
-onUnmounted(() => {
-  clearTimeout(debounceTimer);
-});
 </script>
 
 <style scoped>
@@ -207,18 +188,19 @@ onUnmounted(() => {
   display: flex;
   justify-content: center;
   padding: 40px;
-  background: linear-gradient(135deg, #141e30, #243b55);
+  min-height: 100%;
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
 }
 
 .articles-wrapper {
   width: 100%;
   max-width: 1200px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  background: var(--glass-bg);
+  border-radius: var(--glass-radius-sm);
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .articles-header {
@@ -241,7 +223,7 @@ onUnmounted(() => {
 }
 
 .articles-title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   font-size: 24px;
 }
 
@@ -253,26 +235,26 @@ onUnmounted(() => {
   position: relative;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.1);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+  background: var(--glass-bg-inner);
+  transition: var(--transition-card);
   cursor: pointer;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-subtle);
 }
 
 .article-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-medium);
 }
 
 .article-content {
   flex: 1;
-  min-width: 0; /* 防止内容过长导致换行 */
+  min-width: 0;
 }
 
 .article-title {
   font-size: 18px;
   font-weight: bold;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   margin-bottom: 4px;
   white-space: nowrap;
   overflow: hidden;
@@ -281,7 +263,7 @@ onUnmounted(() => {
 
 .article-summary {
   font-size: 14px;
-  color: #ccc;
+  color: var(--color-text-muted);
   margin: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -290,11 +272,11 @@ onUnmounted(() => {
 
 .article-meta {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
   display: flex;
   align-items: center;
   gap: 8px;
-  flex-shrink: 0; /* 防止元信息被压缩 */
+  flex-shrink: 0;
 }
 
 .article-author {
@@ -311,8 +293,9 @@ onUnmounted(() => {
 
 .author-username {
   font-size: 12px;
-  color: #ccc;
+  color: var(--color-text-muted);
 }
+
 .delete-btn {
   position: absolute;
   top: 8px;

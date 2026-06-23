@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <n-card class="main-card" hoverable>
     <div class="main-header">
       <n-avatar
@@ -37,7 +37,7 @@ import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { NAvatar, NCard, NDivider, NCarousel, NTag, NSpace, NText, NIcon } from 'naive-ui';
 import { CheckmarkCircle, CloseCircle } from '@vicons/ionicons5';
 import axios from 'axios';
-import api from '../../api/api.js';
+import client from '../../api/client.js';
 
 // 定义 props
 const props = defineProps({
@@ -68,7 +68,7 @@ const checkInternet = async () => {
 
 const checkServerHealth = async () => {
   try {
-    const response = await api.get('/health', { timeout: 3000 });
+    const response = await client.get('/health', { timeout: 3000 });
     return response.status === 200;
   } catch {
     return false;
@@ -119,9 +119,9 @@ onUnmounted(() => {
 
 <style scoped>
 .main-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   margin-bottom: 24px;
 }
 
@@ -141,13 +141,13 @@ onUnmounted(() => {
 .welcome-title {
   margin: 0;
   font-size: 24px;
-  color: #fff;
+  color: var(--color-text-primary);
 }
 
 .welcome-subtitle {
   margin: 0;
   font-size: 14px;
-  color: #888;
+  color: var(--color-text-subtle);
 }
 
 .server-carousel {
@@ -158,7 +158,7 @@ onUnmounted(() => {
 
 .server-card {
   padding: 16px;
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-inner);
   border-radius: 8px;
 }
 </style>

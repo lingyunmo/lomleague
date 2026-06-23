@@ -1,0 +1,10 @@
+packages:
+  - "lom"
+  - "lomserver"
+
+onlyBuiltDependencies:
+  - "@prisma/client"
+  - "@prisma/engines"
+  - esbuild
+  - prisma
+  - bcrypt

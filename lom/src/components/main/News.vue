@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <n-card class="news-card" hoverable title="联盟动态">
     <n-grid :cols="responsiveCols" :x-gap="24" :y-gap="24">
       <!-- 统计项 -->
@@ -23,18 +23,18 @@
     <n-card class="competition-notice" hoverable>
       <n-space vertical align="center">
         <n-text strong class="competition-title">
-          <n-icon :component="Trophy" color="#ffd700" />
+          <n-icon :component="Trophy" color="var(--color-gold)" />
           十一周年庆典
         </n-text>
         <n-text class="competition-desc">
-          年度大赛现已开放报名，参赛者需在规定时间内完成指定主题的活动
+          lom 联盟走过十一年，从优酷创作到 B站激励计划，从 MC 服务器到自有官网
         </n-text>
         <n-button
             type="warning"
             class="signup-button"
-            @click="openCompetitionPage"
+            @click="openAnniversary"
         >
-          立即报名
+          前往周年庆
         </n-button>
       </n-space>
     </n-card>
@@ -63,56 +63,56 @@ const stats = ref([
     value: 2015,
     unit: '年',
     type: 'info',
-    desc: '从红石小组成长为跨服联盟'
+    desc: '从优酷创作起步，走过十一年'
   },
   {
     label: '联盟现有人数',
     value: 35,
     unit: '人',
     type: 'success',
-    desc: '包含建筑师/红石工程师/材质作者'
+    desc: '来自五湖四海的 Minecraft 玩家'
   },
   {
     label: '联盟活动数量',
     value: 9,
     unit: '场',
     type: 'error',
-    desc: '每月定期举办建造挑战赛'
+    desc: '歌唱比赛、竞技活动、周年庆典'
   },
   {
-    label: '竞赛时长',
-    value: 365,
-    unit: '天',
+    label: '联盟历史',
+    value: 11,
+    unit: '年',
     type: 'warning',
-    desc: '第二届MPC竞赛持续周期'
+    desc: '2015—2026，三次重启，初心未变'
   }
 ])
 
 // 打开竞赛页面
-const openCompetitionPage = () => {
-  window.open('/competition/mpc-2', '_blank')
+const openAnniversary = () => {
+  window.open('https://anniversary.bzlom.cn/', '_blank')
 }
 </script>
 
 <style scoped>
 .news-card {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 16px;
-  backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
   margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px var(--glass-bg-dark);
 }
 
 .stat-item {
-  background: rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg-inner);
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--glass-bg-dark);
 }
 
 .stat-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 4px 16px var(--glass-bg-darker);
 }
 
 .stat-value {
@@ -145,7 +145,7 @@ const openCompetitionPage = () => {
 
 .signup-button {
   margin-top: 16px;
-  background: linear-gradient(45deg, #ffd700, #ff8c00);
+  background: linear-gradient(45deg, var(--color-gold), var(--color-gold-dark));
   font-weight: bold;
   transition: transform 0.2s;
 }

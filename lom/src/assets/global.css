@@ -1,25 +1,23 @@
-/* 全局暗色背景 */
-body {
-  background-color: #101014;
+/* ============================================================
+ * lom 联盟 · 全局样式
+ * 所有动态色值由 useTheme.js 注入
+ * 此处仅保留 fallback 和动画
+ * ============================================================ */
+
+:root {
+  --color-brand-primary: #007aff;
+  --color-brand-secondary: #5e5ce6;
+  --color-navbar-bg: rgba(0,0,0,.84);
 }
 
-/* 全局动画 */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* 通用加载容器 */
 .loading-container {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #101014;
 }

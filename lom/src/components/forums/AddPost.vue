@@ -1,7 +1,5 @@
 <template>
   <n-form ref="formRef" :model="formData" :rules="rules" label-placement="left">
-
-    <!-- Markdown 编辑器 -->
     <n-form-item label="内容" path="content" required>
       <v-md-editor
           v-model="formData.content"
@@ -10,7 +8,6 @@
       />
     </n-form-item>
 
-    <!-- 附件上传 -->
     <n-form-item label="附件（可选）">
       <n-upload
           :custom-request="customUpload"
@@ -26,7 +23,6 @@
       </n-upload>
     </n-form-item>
 
-    <!-- 操作按钮 -->
     <n-form-item>
       <n-space justify="end" :size="12">
         <n-button @click="emit('cancel')">取消</n-button>
@@ -40,21 +36,22 @@
         </n-button>
       </n-space>
     </n-form-item>
-
   </n-form>
 </template>
 
 <script setup>
-import {ref, computed, onMounted} from 'vue';
-import {useMessage} from 'naive-ui';
-import api from "../../api/api.js";
+/**
+ * AddPost — 创建论坛回复表单
+ * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
+ */
+import { ref, onMounted } from 'vue';
+import { useMessage } from 'naive-ui';
+import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { useFileUpload } from '../../composables/useFileUpload.js';
 
 const props = defineProps({
-  postId: {
-    type: Number,
-    required: true,
-  },
+  postId: { type: Number, required: true },
 });
 
 const emit = defineEmits(['created', 'cancel']);
@@ -63,13 +60,15 @@ const authStore = useAuthStore();
 
 const formData = ref({
   content: '',
-  attachments: [],
   region: '',
 });
 
+const attachments = ref([]);
 const submitting = ref(false);
 const defaultFileList = ref([]);
 const formRef = ref(null);
+
+const { customUpload, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
 
 const rules = {
   content: [
@@ -77,68 +76,20 @@ const rules = {
       required: true,
       message: '内容不能为空',
       validator: (_, value) => !!value.trim(),
-      trigger: ['blur', 'input']
-    }
-  ]
+      trigger: ['blur', 'input'],
+    },
+  ],
 };
 
-const isReadyToSubmit = computed(() => {
-  return formData.value.attachments.length === defaultFileList.value.length;
-});
-
-// 自定义上传逻辑
-const customUpload = async ({file, onFinish, onError}) => {
-  try {
-    const form = new FormData();
-    form.append('file', file.file);
-
-    const response = await api.post('/file/upload', form);
-
-    if (response.data?.url) {
-      // 更新附件列表
-      formData.value.attachments.push(response.data.url);
-
-      // 更新默认文件列表，确保正确显示文件名
-      defaultFileList.value.push({
-        uid: file.uid,
-        name: response.data.filename,
-        url: response.data.url,
-        status: 'finished',
-      });
-
-      message.success('附件上传成功');
-      onFinish();
-    } else {
-      throw new Error('上传失败');
-    }
-  } catch (error) {
-    message.error(`上传失败: ${error.message}`);
-    onError();
-  }
-};
-
-// 移除附件
-const handleRemove = ({file}) => {
-  formData.value.attachments = formData.value.attachments.filter(
-      item => item.url !== file.url
-  );
-  defaultFileList.value = defaultFileList.value.filter(
-      item => item.uid !== file.uid
-  );
-
-  message.info('附件已移除');
-};
-
-// 提交表单
 const handleSubmit = async () => {
   try {
     submitting.value = true;
     await formRef.value?.validate();
 
-    await api.post('/forum/replies', {
+    await forumApi.createReply({
       postId: props.postId,
       content: formData.value.content,
-      attachments: formData.value.attachments,
+      attachments: attachments.value,
       region: formData.value.region,
     });
 
@@ -150,17 +101,18 @@ const handleSubmit = async () => {
     submitting.value = false;
   }
 };
+
 const fetchUserRegion = async () => {
   const data = await authStore.fetchUser();
   if (data) {
     formData.value.region = data.lastLoginRegion?.region || '未知';
   }
 };
+
 onMounted(() => {
   fetchUserRegion();
 });
 </script>
 
 <style scoped>
-/* 根据需求添加样式 */
 </style>

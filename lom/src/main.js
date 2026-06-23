@@ -4,6 +4,10 @@ import App from './App.vue';
 import router from './router/index.js';
 import naive from 'naive-ui';
 import './assets/global.css';
+import { initTheme } from './composables/useTheme.js';
+
+// 主题初始化（在挂载前同步执行，避免 FOUC）
+initTheme();
 import 'vfonts/Lato.css';
 
 // === Markdown 编辑器 ===

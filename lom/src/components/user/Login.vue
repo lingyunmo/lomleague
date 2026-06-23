@@ -1,17 +1,50 @@
 <template>
-  <div class="auth-container">
-    <n-card :bordered="false" class="auth-card">
-      <h3 class="auth-title">登录</h3>
-      <n-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <n-form-item label="用户名" path="username">
-          <n-input v-model:value="form.username" placeholder="请输入用户名" />
+  <div class="auth-page">
+    <div class="auth-card">
+      <img src="/logo.jpg" alt="lom" class="auth-logo" />
+      <h2 class="auth-title">欢迎回来</h2>
+      <p class="auth-sub">登录 lom 联盟</p>
+
+      <n-form ref="formRef" :model="form" :rules="rules" class="auth-form">
+        <n-form-item path="username">
+          <n-input
+            v-model:value="form.username"
+            placeholder="用户名"
+            size="large"
+            :input-props="{ autocomplete: 'username' }"
+          >
+            <template #prefix><n-icon><Person /></n-icon></template>
+          </n-input>
         </n-form-item>
-        <n-form-item label="密码" path="password">
-          <n-input type="password" v-model:value="form.password" placeholder="请输入密码" />
+        <n-form-item path="password">
+          <n-input
+            v-model:value="form.password"
+            type="password"
+            placeholder="密码"
+            size="large"
+            :input-props="{ autocomplete: 'current-password' }"
+            @keyup.enter="handleLogin"
+          >
+            <template #prefix><n-icon><LockClosed /></n-icon></template>
+          </n-input>
         </n-form-item>
-        <n-button type="primary" block :loading="loading" @click="handleLogin">登录</n-button>
+
+        <n-button
+          type="primary"
+          block
+          size="large"
+          :loading="loading"
+          @click="handleLogin"
+        >
+          登录
+        </n-button>
       </n-form>
-    </n-card>
+
+      <p class="auth-switch">
+        还没有账号？
+        <n-button text type="primary" @click="router.push('/register')">注册</n-button>
+      </p>
+    </div>
   </div>
 </template>
 
@@ -19,14 +52,12 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
-import api from '../../api/api.js';
+import { Person, LockClosed } from '@vicons/ionicons5';
+import { userApi } from '../../api/user.js';
+import { ipApi } from '../../api/ip.js';
 import { useAuthStore } from '../../stores/authStore.js';
 
-const form = ref({
-  username: '',
-  password: '',
-});
-
+const form = ref({ username: '', password: '' });
 const formRef = ref(null);
 const loading = ref(false);
 const route = useRoute();
@@ -41,7 +72,7 @@ const rules = {
 
 const fetchIpRegion = async () => {
   try {
-    const res = await api.get('/get-ip');
+    const res = await ipApi.getIpRegion();
     return { ip: res.data.ip, region: res.data.region };
   } catch {
     return { ip: '', region: '' };
@@ -49,51 +80,75 @@ const fetchIpRegion = async () => {
 };
 
 const handleLogin = async () => {
-  try {
-    await formRef.value?.validate();
-  } catch {
-    return;
-  }
-
+  try { await formRef.value?.validate(); } catch { return; }
   loading.value = true;
   try {
     const { ip, region } = await fetchIpRegion();
-
-    const response = await api.post('/user/login', {
-      username: form.value.username,
-      password: form.value.password,
-      ip,
-      region,
-    });
-
+    const response = await userApi.login({ username: form.value.username, password: form.value.password, ip, region });
     authStore.setToken(response.data.token);
     await authStore.fetchUser();
     message.success('登录成功');
-    router.push(route.query.redirect || '/profile');
+    router.push(route.query.redirect || '/');
   } catch (error) {
     message.error(error.response?.data?.message || '登录失败，请检查用户名和密码');
-  } finally {
-    loading.value = false;
-  }
+  } finally { loading.value = false; }
 };
 </script>
 
 <style scoped>
-.auth-container {
+.auth-page {
+  flex: 1;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
-  background-color: #101014;
+  justify-content: center;
+  padding: 40px 24px;
+  background: linear-gradient(180deg, var(--color-bg-gradient-start), var(--color-bg-dark) 60%);
 }
 
 .auth-card {
-  width: 400px;
-  animation: fadeIn 0.5s ease-in-out;
+  width: 380px;
+  max-width: 100%;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 40px 32px;
+  animation: fadeIn .5s cubic-bezier(.22,.61,.36,1) both;
+}
+
+.auth-logo {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  display: block;
+  margin: 0 auto 16px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.25);
 }
 
 .auth-title {
-  color: #fff;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
   text-align: center;
+  color: var(--color-text-primary);
+}
+
+.auth-sub {
+  margin: 4px 0 28px;
+  text-align: center;
+  font-size: 14px;
+  color: var(--color-text-muted);
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.auth-switch {
+  text-align: center;
+  margin: 24px 0 0;
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 </style>

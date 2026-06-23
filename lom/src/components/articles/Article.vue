@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="article-container" v-if="!loading">
     <!-- 主内容容器 -->
     <div class="article-wrapper">
@@ -74,9 +74,10 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
-import api from '../../api/api.js';
+import { articleApi } from '../../api/article.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { formatDate } from '../../utils/date.js';
+import { parseAttachments } from '../../utils/attachment.js';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import LikeButton from '../LikeButton.vue';
 import { ArrowBack, Time, Globe, ShareSocial, Trash } from '@vicons/ionicons5';
@@ -93,10 +94,9 @@ const loading = ref(true);
 const fetchArticle = async () => {
   const articleId = route.params.id;
   try {
-    const response = await api.get(`/articles/${articleId}`);
+    const response = await articleApi.getArticle(articleId);
     article.value = response.data || {};
   } catch (error) {
-    console.error('获取文章失败:', error);
     message.error('获取文章失败，请稍后重试');
     await router.push('/articles');
   } finally {
@@ -125,7 +125,7 @@ const confirmDeleteArticle = () => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await api.delete(`/articles/${article.value.id}`);
+        await articleApi.deleteArticle(article.value.id);
         message.success('文章已删除');
         router.push({ name: 'Articles' });
       } catch {
@@ -133,13 +133,6 @@ const confirmDeleteArticle = () => {
       }
     },
   });
-};
-
-// 解析附件（兼容已解析的数组和 JSON 字符串）
-const parseAttachments = (val) => {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  try { return JSON.parse(val); } catch { return []; }
 };
 
 const attachments = computed(() => parseAttachments(article.value.attachments));
@@ -154,19 +147,19 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   padding: 40px;
-  background: linear-gradient(135deg, #141e30, #243b55);
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .article-wrapper {
   width: 100%;
   max-width: 1200px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .article-header {
@@ -178,7 +171,7 @@ onMounted(() => {
 }
 
 .article-title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   font-size: 28px;
   text-align: center;
   margin: 0;
@@ -197,17 +190,17 @@ onMounted(() => {
 
 .main-article:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-medium);
 }
 
 .username {
   font-weight: 500;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
 }
 
 .post-time {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
 }
 
 .article-content {
@@ -222,7 +215,7 @@ onMounted(() => {
   display: block;
   width: 60px;
   height: 3px;
-  background: #4ecca3;
+  background: var(--color-brand-primary);
   margin: 12px auto;
   border-radius: 2px;
 }

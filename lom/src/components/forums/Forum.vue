@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="forum-container" v-if="!loading">
     <div class="forum-wrapper">
       <!-- 头部 -->
@@ -147,12 +147,18 @@
 </template>
 
 <script setup>
+// ============================================================
+// Forum.vue — 帖子详情页（含回复列表）
+// Issue #9: 从 409 行缩减，API 调用改用 forumApi 模块
+// Issue #12: API 端点路径封装到 api/forum.js
+// ============================================================
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
-import api from '../../api/api.js';
+import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { formatDate } from '../../utils/date.js';
+import { parseAttachments } from '../../utils/attachment.js';
 import Pagination from '../Pagination.vue';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import AddPost from './AddPost.vue';
@@ -161,19 +167,18 @@ import { ArrowBack, Time, Globe, Chatbubbles, Create, CreateOutline, Trash } fro
 
 const authStore = useAuthStore();
 const dialog = useDialog();
-
-const post = ref({});
-const loading = ref(true);
 const message = useMessage();
 const route = useRoute();
 const router = useRouter();
 
-// 编辑帖子
+// ==================== 帖子状态 ====================
+const post = ref({});
+const loading = ref(true);
 const isEditingPost = ref(false);
 const savingEdit = ref(false);
 const editPostForm = ref({ title: '', content: '' });
 
-// 回复列表
+// ==================== 回复状态 ====================
 const replies = ref([]);
 const repliesLoading = ref(false);
 const replyPage = ref(1);
@@ -181,21 +186,15 @@ const replyPageSize = ref(20);
 const replyTotal = ref(0);
 const showReplyModal = ref(false);
 
-const parseAttachments = (val) => {
-  if (!val) return [];
-  if (Array.isArray(val)) return val;
-  try { return JSON.parse(val); } catch { return []; }
-};
-
 const attachments = computed(() => parseAttachments(post.value.attachments));
 
+// ==================== 数据获取 ====================
 const fetchPost = async () => {
   const postId = route.params.id;
   try {
-    const response = await api.get(`/forum/posts/${postId}`);
+    const response = await forumApi.getPost(postId);
     post.value = response.data || {};
   } catch (error) {
-    console.error('获取帖子失败:', error);
     message.error('获取帖子失败，请稍后重试');
     await router.push('/forums');
   } finally {
@@ -206,19 +205,20 @@ const fetchPost = async () => {
 const fetchReplies = async () => {
   repliesLoading.value = true;
   try {
-    const response = await api.get(`/forum/replies/${route.params.id}`, {
-      params: { page: replyPage.value, pageSize: replyPageSize.value },
+    const response = await forumApi.getReplies(route.params.id, {
+      page: replyPage.value,
+      pageSize: replyPageSize.value,
     });
     replies.value = response.data.replies;
     replyTotal.value = response.data.total;
   } catch (error) {
-    console.error('获取回复失败:', error);
+    message.error('获取回复失败');
   } finally {
     repliesLoading.value = false;
   }
 };
 
-// === 帖子编辑 ===
+// ==================== 帖子编辑 ====================
 const startEditPost = () => {
   editPostForm.value = { title: post.value.title, content: post.value.content };
   isEditingPost.value = true;
@@ -231,7 +231,7 @@ const cancelEditPost = () => {
 const saveEditPost = async () => {
   savingEdit.value = true;
   try {
-    const res = await api.put(`/forum/posts/${post.value.id}`, {
+    const res = await forumApi.updatePost(post.value.id, {
       title: editPostForm.value.title,
       content: editPostForm.value.content,
     });
@@ -239,14 +239,14 @@ const saveEditPost = async () => {
     post.value.content = res.data.content;
     isEditingPost.value = false;
     message.success('帖子已更新');
-  } catch (error) {
+  } catch {
     message.error('更新失败');
   } finally {
     savingEdit.value = false;
   }
 };
 
-// === 删除 ===
+// ==================== 删除 ====================
 const confirmDeletePost = () => {
   dialog.warning({
     title: '确认删除',
@@ -255,7 +255,7 @@ const confirmDeletePost = () => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await api.delete(`/forum/posts/${post.value.id}`);
+        await forumApi.deletePost(post.value.id);
         message.success('帖子已删除');
         router.push('/forums');
       } catch {
@@ -273,7 +273,7 @@ const confirmDeleteReply = (replyId) => {
     negativeText: '取消',
     onPositiveClick: async () => {
       try {
-        await api.delete(`/forum/replies/${replyId}`);
+        await forumApi.deleteReply(replyId);
         message.success('回复已删除');
         fetchReplies();
       } catch {
@@ -283,22 +283,17 @@ const confirmDeleteReply = (replyId) => {
   });
 };
 
-const goBack = () => {
-  router.push({ name: 'Forums' });
-};
-
-const openNewReply = () => {
-  showReplyModal.value = true;
-};
-
+// ==================== 导航 ====================
+const goBack = () => router.push({ name: 'Forums' });
+const openNewReply = () => { showReplyModal.value = true; };
 const handleReplyCreated = () => {
   showReplyModal.value = false;
   replyPage.value = 1;
   fetchReplies();
 };
-
 const getReplyAttachments = (reply) => parseAttachments(reply.attachments);
 
+// ==================== 初始化 ====================
 onMounted(() => {
   fetchPost();
   fetchReplies();
@@ -310,19 +305,19 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   padding: 40px;
-  background: linear-gradient(135deg, #141e30, #243b55);
+  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .forum-wrapper {
   width: 100%;
   max-width: 1200px;
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--glass-bg);
   border-radius: 12px;
   padding: 16px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-deep);
+  backdrop-filter: var(--glass-blur);
 }
 
 .forum-header {
@@ -335,43 +330,43 @@ onMounted(() => {
 }
 
 .forum-title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   font-size: 24px;
 }
 
 .main-post {
   margin-bottom: 24px;
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  background: var(--glass-bg);
+  box-shadow: var(--shadow-subtle);
 }
 
 .reply-card {
   margin-bottom: 12px;
   border-radius: 6px;
-  background: rgba(255, 255, 255, 0.05);
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  background: var(--glass-bg);
+  transition: var(--transition-card);
+  box-shadow: var(--shadow-subtle);
 }
 
 .reply-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  box-shadow: var(--shadow-medium);
 }
 
 .username {
   font-weight: 500;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
 }
 
 .post-time,
 .reply-time {
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
 }
 
 .section-title {
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   margin: 16px 0;
 }
 
@@ -379,9 +374,9 @@ onMounted(() => {
 .reply-content {
   margin-top: 12px;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.1);
+  background: var(--glass-bg-dark);
   border-radius: 4px;
-  color: #ccc;
+  color: var(--color-text-muted);
 }
 
 .empty-state {

@@ -28,5 +28,8 @@ Thumbs.db
 *.sw?
 *~
 
+# Claude
+.claude/
+
 # Misc
 *.local

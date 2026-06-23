@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div v-if="files.length" class="post-attachments">
     <h3>
       <n-icon><Attach /></n-icon> 附件：
@@ -88,10 +88,10 @@ const props = defineProps({
 }
 
 .attachment-item {
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--glass-bg-inner);
   border-radius: 6px;
   padding: 8px;
-  background: rgba(0, 0, 0, 0.2);
+  background: var(--glass-bg-darker);
 }
 
 .attachment-img {
@@ -109,14 +109,14 @@ const props = defineProps({
   display: flex;
   flex-direction: column;
   align-items: center;
-  color: #4ecca3;
+  color: var(--color-brand-primary);
   text-decoration: none;
 }
 
 .attachment-filename {
   margin-top: 4px;
   font-size: 12px;
-  color: #888;
+  color: var(--color-text-subtle);
   word-break: break-all;
   text-align: center;
 }

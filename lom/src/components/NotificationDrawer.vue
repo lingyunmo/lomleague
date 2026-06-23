@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <n-drawer v-model:show="visible" :width="400" placement="right">
     <n-drawer-content title="通知中心" closable>
       <template #header>
@@ -20,7 +20,7 @@
           @click="handleClick(item)"
         >
           <template #prefix>
-            <n-icon :color="item.isRead ? '#888' : '#4ecca3'" :size="18">
+            <n-icon :color="item.isRead ? '#888' : 'var(--color-brand-primary)'" :size="18">
               <Notifications v-if="item.type === 'reply'" />
               <Heart v-else-if="item.type === 'like'" />
               <InformationCircle v-else />
@@ -39,7 +39,7 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { useRouter } from 'vue-router';
-import api from '../api/api.js';
+import { notificationApi } from '../api/notification.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { formatRelativeDate } from '../utils/date.js';
 import { Notifications, Heart, InformationCircle } from '@vicons/ionicons5';
@@ -61,7 +61,7 @@ const fetchNotifications = async () => {
   if (!authStore.token) return;
   loading.value = true;
   try {
-    const res = await api.get('/notifications', { params: { page: 1, pageSize: 50 } });
+    const res = await notificationApi.getNotifications({ page: 1, pageSize: 50 });
     notifications.value = res.data.notifications;
   } catch { /* ignore */ }
   loading.value = false;
@@ -69,7 +69,7 @@ const fetchNotifications = async () => {
 
 const handleClick = async (item) => {
   if (!item.isRead) {
-    await api.put(`/notifications/${item.id}/read`);
+    await notificationApi.markAsRead(item.id);
     item.isRead = true;
   }
   if (item.entityType === 'post' && item.entityId) {
@@ -82,7 +82,7 @@ const handleClick = async (item) => {
 };
 
 const markAllRead = async () => {
-  await api.put('/notifications/read-all');
+  await notificationApi.markAllAsRead();
   notifications.value.forEach(n => n.isRead = true);
 };
 

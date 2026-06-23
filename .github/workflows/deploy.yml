@@ -1,0 +1,102 @@
+name: Test → Build → Deploy
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+env:
+  IMAGE: ghcr.io/${{ github.repository_owner }}/lomleague
+
+jobs:
+  # ============================================
+  # 阶段 1: 后端测试
+  # ============================================
+  test:
+    name: 🧪 测试
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpass123
+          MYSQL_DATABASE: lom
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with: { version: latest }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: 'pnpm' }
+
+      - name: 安装依赖 & 迁移 & 测试
+        working-directory: lomserver
+        env:
+          DATABASE_URL: mysql://root:testpass123@localhost:3306/lom
+          JWT_SECRET: test_secret
+        run: |
+          pnpm install
+          npx prisma migrate deploy
+          pnpm test
+
+  # ============================================
+  # 阶段 2: 构建镜像 → 推送 → 部署
+  # ============================================
+  deploy:
+    name: 🚀 构建 & 部署
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 🔐 登录 GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 构建 Docker 镜像
+        run: docker build -t ${{ env.IMAGE }}:latest .
+
+      - name: 📤 推送镜像到 GHCR
+        run: docker push ${{ env.IMAGE }}:latest
+
+      - name: 📂 上传 Compose 文件到服务器
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: docker-compose.prod.yml
+          target: /root/minecraft/lomleague
+
+      - name: 🖥️ SSH 部署
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          script: |
+            set -e
+            cd /root/minecraft/lomleague
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            docker compose -f docker-compose.prod.yml pull app
+            docker compose -f docker-compose.prod.yml up -d
+            docker image prune -f
+            echo "✅ 部署完成"
