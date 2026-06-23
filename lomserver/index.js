@@ -27,7 +27,7 @@ import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routes/userRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
-import articleRoutes from './routes/articleRoutes.js';
+import articleRoutes from './routes/ArticleRoutes.js';
 import likeRoutes from './routes/likeRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 
