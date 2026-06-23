@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `user` ADD COLUMN `checkin_streak` INTEGER NOT NULL DEFAULT 0,
+ALTER TABLE `User` ADD COLUMN `checkin_streak` INTEGER NOT NULL DEFAULT 0,
     ADD COLUMN `last_checkin_date` DATETIME(3) NULL;
 
 -- CreateTable
