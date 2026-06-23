@@ -44,8 +44,8 @@ jobs:
           DATABASE_URL: mysql://root:testpass123@localhost:3306/lom
           JWT_SECRET: test_secret
           COREPACK_ENABLE_STRICT: '0'
+          PNPM_ONLY_BUILT_DEPENDENCIES: '@prisma/client @prisma/engines esbuild prisma bcrypt'
         run: |
-          pnpm config set onlyBuiltDependencies '@prisma/client' '@prisma/engines' esbuild prisma bcrypt
           pnpm install
           npx prisma migrate deploy
           pnpm test
