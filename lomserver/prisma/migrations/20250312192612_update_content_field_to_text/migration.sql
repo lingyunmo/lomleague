@@ -1,5 +1,5 @@
 -- AlterTable
-ALTER TABLE `forumpost` MODIFY `content` TEXT NOT NULL;
+ALTER TABLE `ForumPost` MODIFY `content` TEXT NOT NULL;
 
 -- AlterTable
-ALTER TABLE `forumreply` MODIFY `content` TEXT NOT NULL;
+ALTER TABLE `ForumReply` MODIFY `content` TEXT NOT NULL;
