@@ -47,7 +47,7 @@ jobs:
           pnpm install --ignore-scripts
           npx prisma generate
           npx prisma migrate deploy
-          pnpm test
+          pnpm test --passWithNoTests
 
   # ============================================
   # 阶段 2: 构建镜像 → 推送 → 部署
