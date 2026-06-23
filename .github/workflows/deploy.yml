@@ -44,7 +44,8 @@ jobs:
           DATABASE_URL: mysql://root:testpass123@localhost:3306/lom
           JWT_SECRET: test_secret
         run: |
-          pnpm install
+          pnpm install --ignore-scripts
+          npx prisma generate
           npx prisma migrate deploy
           pnpm test
 
