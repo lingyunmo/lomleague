@@ -10,7 +10,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_NAME:-lom}
     volumes:
-      - mysql_data:/var/lib/mysql
+      - ./mysql_data:/var/lib/mysql
     networks:
       - common-net
     healthcheck:
@@ -23,6 +23,8 @@ services:
     image: ghcr.io/${GH_USER}/lomleague:latest
     container_name: lom-app
     restart: unless-stopped
+    volumes:
+      - ./upload:/app/lomserver/upload
     env_file:
       - .env
     environment:
@@ -34,8 +36,6 @@ services:
       mysql:
         condition: service_healthy
 
-volumes:
-  mysql_data:
 
 networks:
   common-net:
