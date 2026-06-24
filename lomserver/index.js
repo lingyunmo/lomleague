@@ -56,7 +56,8 @@ app.use(cors(config.cors));
 
 // Helmet（XSS 防护等安全头）
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' }, // 允许跨域加载资源
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false, // CSP 由 Vite 构建时处理，运行时不需要
 }));
 
 // Morgan dev 日志
