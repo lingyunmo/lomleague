@@ -20,6 +20,8 @@ class LikeService {
     // 点赞时发送通知给内容作者
     if (result.liked) {
       let ownerId = null;
+      let notifEntityType = entityType;
+      let notifEntityId = entityId;
       let title = '';
 
       if (entityType === 'post') {
@@ -29,6 +31,8 @@ class LikeService {
       } else if (entityType === 'reply') {
         const reply = await ReplyDAO.getReplyById(entityId);
         ownerId = reply?.userId;
+        notifEntityType = 'post';  // 跳转到帖子
+        notifEntityId = reply?.postId;
       } else if (entityType === 'article') {
         const article = await ArticleDAO.getArticleById(entityId);
         ownerId = article?.userId;
@@ -43,8 +47,8 @@ class LikeService {
           userId: ownerId,
           type: 'like',
           content: `${username} 赞了${contentText}`,
-          entityType,
-          entityId,
+          entityType: notifEntityType,
+          entityId: notifEntityId,
         });
       }
       logger.info('点赞', { userId, entityType, entityId });

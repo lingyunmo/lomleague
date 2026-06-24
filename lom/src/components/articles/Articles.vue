@@ -29,48 +29,28 @@
             :key="article.id"
             class="article-card"
             hoverable
-            embedded
             @click="viewArticle(article)"
-            @mouseenter="hoveredArticle = article.id"
-            @mouseleave="hoveredArticle = null"
-            :style="{
-            transform: hoveredArticle === article.id ? 'translateY(-2px)' : 'none',
-          }"
-        >
-          <n-space justify="space-between" align="center">
-            <div class="article-content">
-              <p class="article-title">{{ article.title }}</p>
-              <p class="article-summary">{{ article.content.substring(0, 100) }}...</p>
-            </div>
-
-            <div class="article-meta">
-              <n-space align="center" :size="8">
-                <n-icon><Time /></n-icon>
-                <span>{{ formatDate(article.updatedAt) }}</span>
-                <n-icon><Globe /></n-icon>
-                <span>{{ article.region || '未知地区' }}</span>
-                <div class="article-author">
-                  <img
-                      :src="article.user?.avatar || '/default-avatar.png'"
-                      alt="avatar"
-                      class="author-avatar"
-                  />
-                  <span class="author-username">{{ article.user?.username || '未知发布人' }}</span>
-                </div>
-              </n-space>
-            </div>
-          </n-space>
-
-          <n-button
-            v-if="authStore.isAdmin"
-            quaternary
-            size="tiny"
-            type="error"
-            class="delete-btn"
-            @click.stop="confirmDeleteArticle(article.id)"
           >
-            <template #icon><n-icon><Trash /></n-icon></template>
-          </n-button>
+            <div class="article-row">
+              <div class="article-left">
+                <UserFrame :userId="article.userId" :src="article.user?.avatar" :size="36" />
+                <div class="article-main">
+                  <div class="article-title">{{ article.title }}</div>
+                  <div class="article-summary">{{ article.content.substring(0, 80) }}{{ article.content.length > 80 ? '...' : '' }}</div>
+                  <div class="article-meta">
+                    <n-icon size="13"><Person /></n-icon> {{ article.user?.username || '未知' }}
+                    <n-icon size="13"><Time /></n-icon> {{ formatDate(article.updatedAt) }}
+                    <n-icon size="13"><Globe /></n-icon> {{ article.region || '未知' }}
+                  </div>
+                </div>
+              </div>
+              <div class="article-right" @click.stop>
+                <LikeButton v-if="article.id" entity-type="article" :entity-id="article.id" />
+                <n-button v-if="authStore.isAdmin" quaternary size="tiny" type="error" @click="confirmDeleteArticle(article.id)">
+                  <template #icon><n-icon><Trash /></n-icon></template>
+                </n-button>
+              </div>
+            </div>
         </n-card>
       </n-space>
 
@@ -118,7 +98,9 @@ import { useDebounce } from '../../composables/useDebounce.js';
 import { formatDate } from '../../utils/date.js';
 import Pagination from '../Pagination.vue';
 import AddArticle from './AddArticle.vue';
-import { Add, Search, Time, Globe, Trash } from '@vicons/ionicons5';
+import { Add, Search, Time, Globe, Trash, Person } from '@vicons/ionicons5';
+import LikeButton from '../LikeButton.vue';
+import UserFrame from '../UserFrame.vue';
 
 const authStore = useAuthStore();
 const dialog = useDialog();
@@ -147,7 +129,6 @@ watch(searchKeyword, (val) => {
   debouncedSearch(val);
 });
 
-const hoveredArticle = ref(null);
 const showAddArticleModal = ref(false);
 
 const handleArticleCreated = () => {
@@ -218,121 +199,77 @@ onMounted(() => {
   gap: 12px;
 }
 
-.search-input {
-  width: 260px;
-}
-
-.articles-title {
-  color: var(--color-brand-primary);
-  font-size: 24px;
-}
-
-.article-list {
-  width: 100%;
-}
+.search-input { width: 260px; }
+.articles-title { color: var(--color-brand-primary); font-size: 24px; }
+.article-list { width: 100%; }
 
 .article-card {
-  position: relative;
-  padding: 12px;
-  border-radius: 8px;
   background: var(--glass-bg-inner);
-  transition: var(--transition-card);
+  border-radius: 10px;
   cursor: pointer;
+  transition: transform .2s ease, box-shadow .2s ease;
   box-shadow: var(--shadow-subtle);
 }
+.article-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
 
-.article-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-medium);
+.article-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.article-content {
+.article-left {
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
+.article-main { min-width: 0; }
+
 .article-title {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--color-brand-primary);
-  margin-bottom: 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .article-summary {
-  font-size: 14px;
-  color: var(--color-text-muted);
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 12px; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
 .article-meta {
-  font-size: 12px;
-  color: var(--color-text-subtle);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-text-subtle);
+  margin-top: 4px;
+  flex-wrap: nowrap;
+}
+.article-meta > :not(:first-child) { margin-left: 8px; }
+
+.article-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex-shrink: 0;
 }
 
-.article-author {
-  display: flex;
-  align-items: center;
-}
-
-.author-avatar {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  margin-right: 6px;
-}
-
-.author-username {
-  font-size: 12px;
-  color: var(--color-text-muted);
-}
-
-.delete-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.article-card:hover .delete-btn {
-  opacity: 1;
-}
-
-.empty-state {
-  padding: 48px 0;
-}
+.empty-state { padding: 48px 0; }
 
 @media (max-width: 768px) {
-  .articles-container {
-    padding: 16px;
-  }
-
-  .articles-header {
-    flex-direction: column;
-  }
-
-  .articles-header-actions {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .article-card :deep(.n-space) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .articles-container { padding: 16px; }
+  .articles-header { flex-direction: column; }
+  .articles-header-actions { width: 100%; flex-direction: column; }
+  .search-input { width: 100%; }
+  .article-meta-row { gap: 10px; }
+  .article-avatar { display: none; }
+  .article-title { font-size: 14px; }
 }
 </style>

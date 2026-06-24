@@ -29,51 +29,29 @@
             :key="post.id"
             class="post-card"
             hoverable
-            embedded
             @click="viewPost(post.id)"
-            @mouseenter="hoveredPost = post.id"
-            @mouseleave="hoveredPost = null"
-            :style="{
-            transform: hoveredPost === post.id ? 'translateY(-2px)' : 'none',
-          }"
         >
-          <n-space justify="space-between" align="center">
-            <n-space align="center" class="post-user-info">
-              <n-avatar :src="post.user.avatar || '/default-avatar.png'" round size="large" />
-              <span class="post-username">{{ post.user.username }}</span>
-            </n-space>
-
-            <div class="post-content">
-              <p class="post-text">{{ post.title }}</p>
+          <div class="post-row">
+            <div class="post-left">
+              <UserFrame :userId="post.userId" :src="post.user?.avatar" :size="36" />
+              <div class="post-main">
+                <div class="post-title">{{ post.title }}</div>
+                <div class="post-summary">{{ post.content?.substring(0, 60) || '' }}{{ (post.content?.length || 0) > 60 ? '...' : '' }}</div>
+                <div class="post-meta">
+                  <n-icon size="13"><Person /></n-icon> {{ post.user?.username || '匿名' }}
+                  <n-icon size="13"><Time /></n-icon> {{ formatDate(post.updatedAt) }}
+                  <n-icon size="13"><Chatbubbles /></n-icon> {{ post._count?.replies || 0 }}
+                  <n-icon size="13"><Globe /></n-icon> {{ post.region || '未知' }}
+                </div>
+              </div>
             </div>
-
-            <div class="post-meta">
-              <p>
-                <n-icon><Time /></n-icon>
-                {{ formatDate(post.updatedAt) }}
-              </p>
-              <p>
-                <n-icon><Chatbubbles /></n-icon>
-                {{ post._count?.replies || 0 }} 回复
-              </p>
+            <div class="post-right" @click.stop>
+              <LikeButton entity-type="post" :entity-id="post.id" />
+              <n-button v-if="authStore.user?.id === post.userId || authStore.isAdmin" quaternary size="tiny" type="error" @click="confirmDeletePost(post.id)">
+                <template #icon><n-icon><Trash /></n-icon></template>
+              </n-button>
             </div>
-          </n-space>
-
-          <n-tag type="info" round class="post-region">
-            <n-icon><Globe /></n-icon>
-            {{ post.region || '未知地区' }}
-          </n-tag>
-
-          <n-button
-            v-if="authStore.user?.id === post.userId || authStore.isAdmin"
-            quaternary
-            size="tiny"
-            type="error"
-            class="delete-btn"
-            @click.stop="confirmDeletePost(post.id)"
-          >
-            <template #icon><n-icon><Trash /></n-icon></template>
-          </n-button>
+          </div>
         </n-card>
       </n-space>
 
@@ -121,7 +99,9 @@ import { useDebounce } from '../../composables/useDebounce.js';
 import { formatDate } from '../../utils/date.js';
 import Pagination from '../Pagination.vue';
 import AddForum from './AddForum.vue';
-import { Add, Search, Time, Chatbubbles, Globe, Trash } from '@vicons/ionicons5';
+import { Add, Search, Time, Chatbubbles, Globe, Trash, Person } from '@vicons/ionicons5';
+import LikeButton from '../LikeButton.vue';
+import UserFrame from '../UserFrame.vue';
 
 const authStore = useAuthStore();
 const dialog = useDialog();
@@ -150,7 +130,6 @@ watch(searchKeyword, (val) => {
   debouncedSearch(val);
 });
 
-const hoveredPost = ref(null);
 const showAddPostModal = ref(false);
 
 const handlePostCreated = () => {
@@ -197,135 +176,63 @@ onMounted(() => {
 }
 
 .forums-wrapper {
-  width: 100%;
-  max-width: 1200px;
-  background: var(--glass-bg);
-  border-radius: var(--glass-radius-sm);
-  padding: 16px;
-  box-shadow: var(--shadow-deep);
-  backdrop-filter: var(--glass-blur);
+  width: 100%; max-width: 1200px;
+  background: var(--glass-bg); border-radius: var(--glass-radius-sm);
+  padding: 16px; box-shadow: var(--shadow-deep); backdrop-filter: var(--glass-blur);
 }
 
 .forums-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 16px; flex-wrap: wrap; gap: 12px;
 }
-
-.forums-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.search-input {
-  width: 260px;
-}
-
-.forums-title {
-  color: var(--color-brand-primary);
-  font-size: 24px;
-}
-
-.post-list {
-  width: 100%;
-}
+.forums-header-actions { display: flex; align-items: center; gap: 12px; }
+.search-input { width: 260px; }
+.forums-title { color: var(--color-brand-primary); font-size: 24px; }
+.post-list { width: 100%; }
 
 .post-card {
-  position: relative;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--glass-bg);
-  transition: var(--transition-card);
-  cursor: pointer;
+  background: var(--glass-bg-inner); border-radius: 10px;
+  cursor: pointer; transition: transform .2s ease, box-shadow .2s ease;
   box-shadow: var(--shadow-subtle);
 }
+.post-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-medium); }
 
-.post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-medium);
+.post-row { display: flex; align-items: center; gap: 12px; }
+
+.post-left {
+  flex: 1; min-width: 0;
+  display: flex; align-items: center; gap: 12px;
 }
 
-.post-user-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+.post-main { min-width: 0; }
+
+.post-title {
+  font-size: 15px; font-weight: 700; color: var(--color-text-primary);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
-.post-username {
-  font-size: 18px;
-  font-weight: bold;
-  color: var(--color-brand-primary);
-}
-
-.post-content {
-  flex: 1;
-  margin: 0 12px;
-}
-
-.post-text {
-  font-size: 14px;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.post-summary {
+  font-size: 12px; color: var(--color-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-top: 2px;
 }
 
 .post-meta {
-  font-size: 12px;
-  color: var(--color-text-subtle);
-  text-align: right;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: flex; align-items: center; gap: 4px;
+  font-size: 12px; color: var(--color-text-subtle); margin-top: 4px;
 }
+.post-meta > :not(:first-child) { margin-left: 8px; }
 
-.post-region {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-}
+.post-right { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
 
-.delete-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.post-card:hover .delete-btn {
-  opacity: 1;
-}
-
-.empty-state {
-  padding: 48px 0;
-}
+.empty-state { padding: 48px 0; }
 
 @media (max-width: 768px) {
-  .forums-container {
-    padding: 16px;
-  }
-
-  .forums-header {
-    flex-direction: column;
-  }
-
-  .forums-header-actions {
-    width: 100%;
-    flex-direction: column;
-  }
-
-  .search-input {
-    width: 100%;
-  }
-
-  .post-card :deep(.n-space) {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+  .forums-container { padding: 16px; }
+  .forums-header { flex-direction: column; }
+  .forums-header-actions { width: 100%; flex-direction: column; }
+  .search-input { width: 100%; }
+  .post-meta-row { gap: 10px; }
+  .post-avatar { display: none; }
 }
 </style>

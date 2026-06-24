@@ -29,6 +29,13 @@
           社区论坛
         </n-button>
 
+        <n-button quaternary @click="router.push({ name: 'Invite' })">
+          <template #icon>
+            <n-icon><Ribbon /></n-icon>
+          </template>
+          入盟申请
+        </n-button>
+
         <n-button quaternary @click="router.push({ name: 'About' })">
           <template #icon>
             <n-icon><People/></n-icon>
@@ -70,9 +77,9 @@
             placement="bottom-end"
         >
           <n-button quaternary>
-            <template #icon>
-              <n-icon><PersonCircle/></n-icon>
-            </template>
+            <div class="nav-user-avatar" :class="'frame-' + navFrame">
+              <img :src="authStore.user?.avatar || '/default-avatar.png'" class="nav-avatar-img" referrerpolicy="no-referrer" @error="e => e.target.src='/default-avatar.png'" />
+            </div>
             {{ authStore.userDisplayName || '个人中心' }}
           </n-button>
         </n-dropdown>
@@ -90,16 +97,17 @@ import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
 import { NIcon, useMessage, useThemeVars } from 'naive-ui';
 import {
-  Home, Book, Chatbubbles, People, Gift,
+  Home, Book, Chatbubbles, People, Gift, Ribbon,
   LogIn, PersonCircle, Notifications, Settings,
 } from '@vicons/ionicons5';
 import NotificationDrawer from './NotificationDrawer.vue';
 import { notificationApi } from '../api/notification.js';
-
 const authStore = useAuthStore();
 const router = useRouter();
 const message = useMessage();
 const themeVars = useThemeVars();
+
+const navFrame = computed(() => authStore.achFrame);
 
 const goToAnniversary = () => {
   window.open('https://anniversary.bzlom.cn/', '_blank');
@@ -247,5 +255,28 @@ onUnmounted(() => {
   width: 48px;
   height: 48px;
   border-radius: 50%;
+}
+
+/* 头像框 */
+.nav-user-avatar {
+  display: inline-flex;
+  border-radius: 50%;
+  padding: 2px;
+}
+.nav-user-avatar.frame-bronze { background: linear-gradient(135deg, #cd7f32, #e8b870); }
+.nav-user-avatar.frame-silver { background: linear-gradient(135deg, #a0a0a0, #d4d4d4); }
+.nav-user-avatar.frame-gold { background: linear-gradient(135deg, #d4a843, #f0d060); }
+.nav-user-avatar.frame-legend { background: linear-gradient(135deg, #af52de, #ff375f, #f0a040, #34c759); animation: navGlow 2s infinite alternate; }
+
+@keyframes navGlow {
+  from { box-shadow: 0 0 4px rgba(175,82,222,.3); }
+  to { box-shadow: 0 0 10px rgba(255,55,95,.4); }
+}
+
+.nav-avatar-img {
+  width: 24px; height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
 }
 </style>

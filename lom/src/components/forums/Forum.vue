@@ -36,7 +36,7 @@
           <!-- 用户信息行 -->
           <n-space justify="space-between" align="center">
             <n-space align="center">
-              <n-avatar round size="large" :src="post.user?.avatar || '/default-avatar.png'" />
+              <UserFrame :userId="post.userId" :src="post.user?.avatar" :size="40" />
               <div>
                 <div class="username">{{ post.user?.username || '匿名用户' }}</div>
                 <n-text depth="3" class="post-time">
@@ -87,7 +87,7 @@
             <n-card v-for="reply in replies" :key="reply.id" class="reply-card" embedded>
               <n-space justify="space-between" align="center">
                 <n-space align="center">
-                  <n-avatar round size="small" :src="reply.user?.avatar || '/default-avatar.png'" />
+                  <UserFrame :userId="reply.userId" :src="reply.user?.avatar" :size="28" />
                   <div>
                     <div class="username">{{ reply.user?.username || '匿名用户' }}</div>
                     <n-text depth="3" class="reply-time">
@@ -163,6 +163,7 @@ import Pagination from '../Pagination.vue';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import AddPost from './AddPost.vue';
 import LikeButton from '../LikeButton.vue';
+import UserFrame from '../UserFrame.vue';
 import { ArrowBack, Time, Globe, Chatbubbles, Create, CreateOutline, Trash } from '@vicons/ionicons5';
 
 const authStore = useAuthStore();

@@ -14,25 +14,32 @@
       </div>
     </section>
 
-    <!-- ====== 签到条 ====== -->
-    <div v-if="authStore.token" class="checkin-bar">
-      <div class="checkin-bar-left">
-        <BiliFace :src="authStore.user?.avatar || '/default-avatar.png'" :size="30" alt="" />
-        <span class="checkin-greeting">{{ authStore.user?.username || '冒险者' }}</span>
-        <span class="checkin-coins">✨ {{ authStore.user?.gold_coins || 0 }}</span>
-        <span v-if="checkinData.streak" class="checkin-streak">🔥 {{ checkinData.streak }} 天</span>
+    <!-- ====== 工具箱 ====== -->
+    <section class="section toolbox-section">
+      <div class="toolbox">
+        <div v-if="authStore.token" class="toolbox-card checkin-box">
+          <div class="toolbox-label">每日签到</div>
+          <div class="checkin-row">
+            <BiliFace :src="authStore.user?.avatar || '/default-avatar.png'" :size="36" alt="" />
+            <div class="checkin-info">
+              <span class="checkin-coins">✨ {{ authStore.user?.gold_coins || 0 }} 金币</span>
+              <span v-if="checkinData.streak" class="checkin-streak">🔥 连续 {{ checkinData.streak }} 天</span>
+            </div>
+            <n-button type="warning" size="small" round @click="handleCheckin" :loading="checkinLoading" :disabled="!checkinData.canCheckin">
+              {{ checkinData.canCheckin ? '签到' : '已签到' }}
+            </n-button>
+          </div>
+        </div>
+        <div class="toolbox-card launcher-box">
+          <div class="toolbox-label">Minecraft 启动器</div>
+          <div class="launcher-list">
+            <a v-for="ln in launchers" :key="ln.label" :href="ln.url" target="_blank" class="launcher-item" :class="ln.class" :title="ln.desc">
+              <strong>{{ ln.label }}</strong><span>{{ ln.desc }}</span>
+            </a>
+          </div>
+        </div>
       </div>
-      <n-button type="warning" size="small" round @click="handleCheckin" :loading="checkinLoading" :disabled="!checkinData.canCheckin">
-        {{ checkinData.canCheckin ? '签到' : '已签到' }}
-      </n-button>
-    </div>
-
-    <!-- ====== 启动器 ====== -->
-    <div class="launcher-strip">
-      <a v-for="ln in launchers" :key="ln.label" :href="ln.url" target="_blank" class="launcher-link" :class="ln.class">
-        {{ ln.label }}
-      </a>
-    </div>
+    </section>
 
     <!-- ====== 微电影 ====== -->
     <section class="section">
@@ -214,10 +221,10 @@ const heroStats = [
 
 // ---- Launchers ----
 const launchers = [
-  { label: 'PCL2', url: 'https://bbsmc.net/software/pcl', class: 'launcher--pcl' },
-  { label: 'HMCL', url: 'https://hmcl.huangyuhui.net', class: 'launcher--hmcl' },
-  { label: 'MultiMC', url: 'https://multimc.org', class: 'launcher--mm' },
-  { label: 'BakaXL', url: 'https://www.bakaxl.com', class: 'launcher--baka' },
+  { label: 'PCL2', desc: '功能最全·推荐', url: 'https://pcl2.aoe.top/', class: 'launcher--pcl' },
+  { label: 'HMCL', desc: '轻量简洁', url: 'https://hmcl.huangyuhui.net', class: 'launcher--hmcl' },
+  { label: 'MultiMC', desc: '多实例管理', url: 'https://multimc.org', class: 'launcher--mm' },
+  { label: 'BakaXL', desc: '高颜值界面', url: 'https://www.bakaxl.com', class: 'launcher--baka' },
 ]
 
 // ---- Server: verified online via SRV (mc.bzlom.cn → dx.mcgame.pub:19266) ----
@@ -557,7 +564,25 @@ onMounted(async () => {
   .film-grid { grid-template-columns: 1fr; }
   .member-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); }
   .kailei-grid { grid-template-columns: 1fr; }
-  .checkin-bar { flex-direction: column; align-items: stretch; text-align: center; }
-  .checkin-bar-left { justify-content: center; flex-wrap: wrap; }
+  .toolbox { grid-template-columns: 1fr; }
 }
+
+/* ========== TOOLBOX ========== */
+.toolbox-section { padding-top: 8px; }
+.toolbox { display: grid; grid-template-columns: 1fr 2fr; gap: 16px; max-width: 800px; margin: 0 auto; }
+.toolbox-card { background: var(--glass-bg); border-radius: 16px; padding: 18px 20px; backdrop-filter: var(--glass-blur); border: 1px solid var(--glass-border); }
+.toolbox-label { font-size: 12px; font-weight: 700; color: var(--color-text-subtle); margin-bottom: 10px; letter-spacing: .5px; }
+.checkin-row { display: flex; align-items: center; gap: 12px; }
+.checkin-info { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+.checkin-coins { color: var(--color-gold); font-weight: 700; font-size: 15px; }
+.checkin-streak { font-size: 11px; color: var(--color-text-subtle); }
+.launcher-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.launcher-item { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; text-decoration: none; transition: transform .2s ease; }
+.launcher-item strong { font-size: 14px; }
+.launcher-item span { font-size: 11px; opacity: .7; }
+.launcher-item:hover { transform: translateY(-2px); }
+.launcher--pcl { background: rgba(0,122,255,.08); color: #007aff; }
+.launcher--hmcl { background: rgba(94,92,230,.08); color: #5e5ce6; }
+.launcher--mm { background: rgba(212,168,67,.08); color: #d4a843; }
+.launcher--baka { background: rgba(255,69,58,.08); color: #ff453a; }
 </style>

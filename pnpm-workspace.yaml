@@ -9,3 +9,4 @@ pnpm:
     - esbuild
     - prisma
     - bcrypt
+    - core-js

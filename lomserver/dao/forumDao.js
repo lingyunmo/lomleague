@@ -15,6 +15,7 @@ class ForumDAO {
                 select: {
                     id: true,
                     title: true,
+                    content: true,
                     updatedAt: true,
                     userId: true,
                     region: true,

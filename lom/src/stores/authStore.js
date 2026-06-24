@@ -1,10 +1,6 @@
-/**
- * 认证状态 Pinia Store — 唯一真相源
- * 解决 Issue #11: 所有 Auth 状态读取统一走此 Store
- * 解决 Issue #12: API 调用改用 userApi 模块
- */
 import { defineStore } from 'pinia';
 import { userApi } from '../api/user.js';
+import client from '../api/client.js';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -12,11 +8,15 @@ export const useAuthStore = defineStore('auth', {
     try {
       const stored = localStorage.getItem('user');
       if (stored) user = JSON.parse(stored);
-    } catch { /* ignore corrupt data */ }
+    } catch { /* ignore */ }
     return {
       token: localStorage.getItem('token') || null,
       user,
       userLoading: false,
+      // 成就/头像框缓存
+      achList: [],
+      achFrame: 'none',
+      achStats: {},
     };
   },
   getters: {
@@ -24,6 +24,7 @@ export const useAuthStore = defineStore('auth', {
     isAdmin: (state) => !!state.user?.is_admin,
     userAvatar: (state) => state.user?.avatar || '/default-avatar.png',
     userDisplayName: (state) => state.user?.username || '',
+    achCount: (state) => state.achList.filter(a => a.unlocked).length,
   },
   actions: {
     setToken(token) {
@@ -31,7 +32,6 @@ export const useAuthStore = defineStore('auth', {
       localStorage.setItem('token', token);
     },
     setUser(user) {
-      // 标准化：同时保留原始字段 + camelCase 别名，组件无需手动映射
       if (user) {
         user.goldCoins = user.gold_coins;
         user.createdAt = user.created_at;
@@ -42,7 +42,6 @@ export const useAuthStore = defineStore('auth', {
     },
     async fetchUser() {
       if (!this.token) return null;
-      if (this.userLoading) return this.user;
       this.userLoading = true;
       try {
         const response = await userApi.getMe();
@@ -54,6 +53,15 @@ export const useAuthStore = defineStore('auth', {
       } finally {
         this.userLoading = false;
       }
+    },
+    async fetchAchievements() {
+      if (!this.user?.id) return;
+      try {
+        const res = await client.get(`/user/achievements/${this.user.id}`);
+        this.achList = res.data.achievements || [];
+        this.achFrame = res.data.frame || 'none';
+        this.achStats = res.data.stats || {};
+      } catch { /* ignore */ }
     },
     logout() {
       this.token = null;

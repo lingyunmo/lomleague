@@ -16,6 +16,7 @@ const routes = [
   { path: '/articles', name: 'Articles', component: () => import('@/components/articles/Articles.vue') },
   { path: '/article/:id', name: 'Article', component: () => import('@/components/articles/Article.vue') },
   { path: '/about', name: 'About', component: () => import('@/components/about/OurHistory.vue') },
+  { path: '/invite', name: 'Invite', component: () => import('@/components/InviteGenerator.vue') },
   { path: '/admin', name: 'Admin', component: () => import('@/components/admin/AdminDashboard.vue'), meta: { requiresAuth: true } },
   { path: '/:pathMatch(.*)*', name: 'NotFound', component: () => import('@/components/NotFound.vue') },
 ];

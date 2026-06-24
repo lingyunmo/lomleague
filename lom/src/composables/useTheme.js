@@ -106,11 +106,10 @@ function applyAll() {
 
   // 玻璃
   if (glass) {
-    const bg = darkMode.value ? '255,255,255' : '0,0,0';
-    root.style.setProperty('--glass-bg', `rgba(${bg},${darkMode.value ? '.04' : '.03'})`);
-    root.style.setProperty('--glass-bg-inner', `rgba(${bg},${darkMode.value ? '.06' : '.04'})`);
+    root.style.setProperty('--glass-bg', `rgba(${t.rgb},${darkMode.value ? '.05' : '.03'})`);
+    root.style.setProperty('--glass-bg-inner', `rgba(${t.rgb},${darkMode.value ? '.08' : '.05'})`);
     root.style.setProperty('--glass-blur', 'saturate(180%) blur(20px)');
-    root.style.setProperty('--glass-border', `rgba(${bg},${darkMode.value ? '.08' : '.06'})`);
+    root.style.setProperty('--glass-border', `rgba(${t.rgb},${darkMode.value ? '.10' : '.06'})`);
   } else {
     root.style.setProperty('--glass-bg', 'transparent');
     root.style.setProperty('--glass-bg-inner', 'transparent');

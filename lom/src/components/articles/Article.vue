@@ -44,11 +44,7 @@
           <!-- 用户信息行 -->
           <n-space justify="space-between" align="center">
             <n-space align="center">
-              <n-avatar
-                  round
-                  size="large"
-                  :src="article.user?.avatar || '/default-avatar.png'"
-              />
+              <UserFrame :userId="article.userId" :src="article.user?.avatar" :size="40" />
               <div>
                 <div class="username">{{ article.user?.username || '匿名用户' }}</div>
                 <n-text depth="3" class="post-time">
@@ -96,6 +92,7 @@ import { formatDate } from '../../utils/date.js';
 import { parseAttachments } from '../../utils/attachment.js';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import LikeButton from '../LikeButton.vue';
+import UserFrame from '../UserFrame.vue';
 import { ArrowBack, Time, Globe, ShareSocial, CreateOutline, Trash } from '@vicons/ionicons5';
 
 const authStore = useAuthStore();

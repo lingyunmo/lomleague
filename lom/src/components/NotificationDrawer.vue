@@ -75,6 +75,10 @@ const handleClick = async (item) => {
   if (item.entityType === 'post' && item.entityId) {
     visible.value = false;
     router.push(`/forum/${item.entityId}`);
+  } else if (item.entityType === 'reply' && item.entityId) {
+    visible.value = false;
+    // 回复通知跳到对应帖子
+    router.push(`/forum/${item.entityId}`);
   } else if (item.entityType === 'article' && item.entityId) {
     visible.value = false;
     router.push(`/article/${item.entityId}`);
