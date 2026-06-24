@@ -69,12 +69,26 @@ class UserDao {
         return prisma.user.update({
             where: { id: userId },
             data: {
-                username: data.username,
-                email: data.email,
-                avatar: data.avatar || undefined,
+                ...(data.username !== undefined && { username: data.username }),
+                ...(data.email !== undefined && { email: data.email }),
+                ...(data.avatar !== undefined && { avatar: data.avatar }),
+                ...(data.is_admin !== undefined && { is_admin: data.is_admin }),
                 updated_at: new Date(),
             },
         });
+    }
+
+    // ============ Admin ============
+
+    static async getAllUsers() {
+        return prisma.user.findMany({
+            select: { id: true, username: true, email: true, avatar: true, is_admin: true, gold_coins: true, checkin_streak: true, last_checkin_date: true, created_at: true },
+            orderBy: { id: 'asc' },
+        });
+    }
+
+    static async deleteUser(userId) {
+        return prisma.user.delete({ where: { id: userId } });
     }
 }
 

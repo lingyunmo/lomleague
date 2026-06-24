@@ -32,9 +32,12 @@ client.interceptors.response.use(
   (response) => response,
   (error) => {
     if ([401, 403].includes(error.response?.status)) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/login';
+      const onAuthPage = ['/login', '/register'].includes(window.location.pathname);
+      if (!onAuthPage) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   },

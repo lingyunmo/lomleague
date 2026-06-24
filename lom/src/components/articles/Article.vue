@@ -21,6 +21,14 @@
           </n-button>
           <n-button
             v-if="authStore.isAdmin"
+            type="warning"
+            @click="startEdit"
+          >
+            <template #icon><n-icon><CreateOutline /></n-icon></template>
+            编辑文章
+          </n-button>
+          <n-button
+            v-if="authStore.isAdmin"
             type="error"
             @click="confirmDeleteArticle"
           >
@@ -53,8 +61,16 @@
             </n-tag>
           </n-space>
 
-          <!-- 文章内容 -->
-          <div class="article-content">
+          <!-- 文章内容（编辑/只读切换） -->
+          <template v-if="isEditing">
+            <n-input v-model:value="editForm.title" placeholder="标题" />
+            <v-md-editor v-model="editForm.content" height="300px" />
+            <n-space style="margin-top:12px">
+              <n-button type="primary" @click="saveEdit" :loading="savingEdit">保存</n-button>
+              <n-button @click="isEditing = false">取消</n-button>
+            </n-space>
+          </template>
+          <div v-else class="article-content">
             <v-md-preview :text="article.content" />
           </div>
 
@@ -80,7 +96,7 @@ import { formatDate } from '../../utils/date.js';
 import { parseAttachments } from '../../utils/attachment.js';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import LikeButton from '../LikeButton.vue';
-import { ArrowBack, Time, Globe, ShareSocial, Trash } from '@vicons/ionicons5';
+import { ArrowBack, Time, Globe, ShareSocial, CreateOutline, Trash } from '@vicons/ionicons5';
 
 const authStore = useAuthStore();
 const dialog = useDialog();
@@ -89,6 +105,26 @@ const router = useRouter();
 const message = useMessage();
 const article = ref({});
 const loading = ref(true);
+const isEditing = ref(false);
+const editForm = ref({ title: '', content: '' });
+const savingEdit = ref(false);
+
+const startEdit = () => {
+  editForm.value = { title: article.value.title, content: article.value.content };
+  isEditing.value = true;
+};
+
+const saveEdit = async () => {
+  savingEdit.value = true;
+  try {
+    await articleApi.updateArticle(article.value.id, editForm.value);
+    article.value.title = editForm.value.title;
+    article.value.content = editForm.value.content;
+    isEditing.value = false;
+    message.success('更新成功');
+  } catch { message.error('更新失败'); }
+  finally { savingEdit.value = false; }
+};
 
 // 获取文章详情
 const fetchArticle = async () => {

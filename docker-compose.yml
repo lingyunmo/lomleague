@@ -1,9 +1,6 @@
-# lom 联盟 · 三位一体部署
-# MySQL + Express（含 Vue 前端静态文件）
-#
+# lom 联盟 · 本地开发
 # 启动: docker compose up -d
 # 停止: docker compose down
-# 查看: docker compose logs -f
 
 services:
   mysql:
@@ -15,6 +12,8 @@ services:
       MYSQL_DATABASE: ${DB_NAME:-lom}
     volumes:
       - mysql_data:/var/lib/mysql
+    networks:
+      - common-net
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
@@ -31,7 +30,6 @@ services:
       NODE_ENV: production
       DATABASE_URL: mysql://root:${DB_PASSWORD}@mysql:3306/${DB_NAME:-lom}
     networks:
-      - default
       - common-net
     depends_on:
       mysql:
@@ -41,6 +39,5 @@ volumes:
   mysql_data:
 
 networks:
-  default:
   common-net:
     external: true

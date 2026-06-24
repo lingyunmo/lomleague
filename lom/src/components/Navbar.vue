@@ -85,7 +85,7 @@
 </template>
 
 <script setup>
-import { h, ref, onMounted, onUnmounted } from 'vue';
+import { h, ref, computed, onMounted, onUnmounted } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter } from 'vue-router';
 import { NIcon, useMessage, useThemeVars } from 'naive-ui';
@@ -120,6 +120,13 @@ const dropdownOptions = [
     key: 'settings',
     icon: renderIcon(Settings),
     props: { onClick: () => router.push({ name: 'EditProfile' }) }
+  },
+  {
+    label: '管理后台',
+    key: 'admin',
+    icon: renderIcon(Settings),
+    props: { onClick: () => router.push({ name: 'Admin' }) },
+    show: !!authStore.user?.is_admin,
   },
   { type: 'divider' },
   {

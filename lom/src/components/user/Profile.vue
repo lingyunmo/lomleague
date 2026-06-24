@@ -22,6 +22,11 @@
 
       <n-divider />
 
+      <n-button type="primary" block @click="$router.push('/edit-profile')" style="margin-bottom:16px">
+        <template #icon><n-icon><CreateOutline /></n-icon></template>
+        编辑个人资料
+      </n-button>
+
       <n-descriptions
           bordered
           column="1"
@@ -47,7 +52,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
 import { useAuthStore } from '../../stores/authStore.js';
 import { formatDate } from '../../utils/date.js';
-import { MailOutline, GlobeOutline, LocationOutline } from '@vicons/ionicons5';
+import { MailOutline, GlobeOutline, LocationOutline, CreateOutline } from '@vicons/ionicons5';
 
 const authStore = useAuthStore();
 const loading = ref(true);
@@ -69,7 +74,7 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100%;
   background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
   animation: fadeIn 1s ease-in-out;
 }

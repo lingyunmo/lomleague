@@ -175,7 +175,7 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100%;
   background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end)) fixed;
   animation: fadeIn 1s ease-in-out;
 }

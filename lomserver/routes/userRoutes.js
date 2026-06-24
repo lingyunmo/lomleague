@@ -4,10 +4,11 @@
  */
 import express from 'express';
 import { z } from 'zod';
-import { authMiddleware } from '../middleware/authMiddleware.js';
+import { authMiddleware, isAdmin } from '../middleware/authMiddleware.js';
 import validate from '../middleware/validate.js';
 import asyncHandler from '../middleware/asyncHandler.js';
 import UserService from '../services/userService.js';
+import UserDao from '../dao/UserDao.js';
 
 const router = express.Router();
 
@@ -84,6 +85,61 @@ router.post('/checkin', authMiddleware, asyncHandler(async (req, res) => {
     streak: result.streak,
     totalCoins: result.totalCoins,
   });
+}));
+
+// ==================== Admin 路由 ====================
+
+const adminUpdateSchema = z.object({
+  username: z.string().min(2).max(50).optional(),
+  email: z.string().email().optional(),
+  password: z.string().min(6).max(100).optional(),
+  is_admin: z.boolean().optional(),
+});
+
+const adminCreateSchema = z.object({
+  username: z.string().min(2).max(50),
+  password: z.string().min(6).max(100),
+  email: z.string().email(),
+  is_admin: z.boolean().optional(),
+});
+
+// GET /admin/users
+router.get('/admin/users', authMiddleware, isAdmin, asyncHandler(async (req, res) => {
+  const users = await UserDao.getAllUsers();
+  res.json(users);
+}));
+
+// POST /admin/users
+router.post('/admin/users', authMiddleware, isAdmin, validate(adminCreateSchema), asyncHandler(async (req, res) => {
+  const { username, password, email, is_admin } = req.body;
+  const result = await UserService.register(username, password, email, null);
+  if (is_admin) {
+    await UserDao.updateUser(result.userId, { is_admin: true });
+  }
+  res.status(201).json({ message: '创建成功', userId: result.userId });
+}));
+
+// PUT /admin/users/:id
+router.put('/admin/users/:id', authMiddleware, isAdmin, validate(adminUpdateSchema), asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  const { password, ...rest } = req.body;
+  if (Object.keys(rest).length > 0) {
+    await UserDao.updateUser(userId, rest);
+  }
+  if (password) {
+    await UserDao.updatePassword(userId, password);
+  }
+  res.json({ message: '更新成功' });
+}));
+
+// DELETE /admin/users/:id
+router.delete('/admin/users/:id', authMiddleware, isAdmin, asyncHandler(async (req, res) => {
+  const userId = parseInt(req.params.id, 10);
+  if (userId === req.user.id) {
+    return res.status(400).json({ message: '不能删除自己' });
+  }
+  await UserDao.deleteUser(userId);
+  res.json({ message: '删除成功' });
 }));
 
 export default router;
