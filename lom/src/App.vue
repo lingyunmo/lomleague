@@ -21,17 +21,27 @@
  * App.vue — 根组件
  * Naive UI 主题联动 useTheme：暗/亮模式 + 品牌色同步
  */
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, onUnmounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { darkTheme } from 'naive-ui';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ThemeSwitcher from './components/ThemeSwitcher.vue';
 import { useAuthStore } from './stores/authStore.js';
 import { useTheme, naiveThemeOverrides } from './composables/useTheme.js';
+import { SESSION_EXPIRED_EVENT } from './api/session.js';
 
 const { darkMode } = useTheme();
 const naiveTheme = computed(() => (darkMode.value ? darkTheme : null));
 const authStore = useAuthStore();
+const route = useRoute();
+const router = useRouter();
+function handleSessionExpired() {
+  authStore.logout();
+  if (route.meta.requiresAuth) router.replace({ name: 'Login', query: { redirect: route.fullPath } });
+}
+window.addEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired);
+onUnmounted(() => window.removeEventListener(SESSION_EXPIRED_EVENT, handleSessionExpired));
 
 onMounted(async () => {
   await authStore.fetchUser();

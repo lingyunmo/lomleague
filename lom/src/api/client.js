@@ -6,45 +6,37 @@
  */
 import axios from 'axios';
 import { isTokenExpired } from './utils.js';
+import { expireSession, SESSION_EXPIRED_EVENT } from './session.js';
 
-const client = axios.create({
-  baseURL: '/api',
-  timeout: 15000,
-});
-
-// ==================== 请求拦截器 ====================
-
-client.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
+export function createApiClient({
+  storage = localStorage,
+  onSessionExpired = () => window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT)),
+} = {}) {
+  const instance = axios.create({ baseURL: '/api', timeout: 15000 });
+  instance.interceptors.request.use((config) => {
+    const token = storage.getItem('token');
     if (token) {
       if (isTokenExpired(token)) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-      } else {
+        expireSession(storage, token, onSessionExpired);
+      } else if (!/^\/?user\/(login|register)(?:\?|$)/.test(config.url || '')) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
     return config;
-  },
-  (error) => Promise.reject(error),
-);
-
-// ==================== 响应拦截器 ====================
-
-client.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if ([401, 403].includes(error.response?.status)) {
-      const onAuthPage = ['/login', '/register'].includes(window.location.pathname);
-      if (!onAuthPage) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/login';
+  });
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      if (error.response?.status === 401) {
+        const authorization = error.config?.headers?.Authorization;
+        const sentToken = typeof authorization === 'string' ? authorization.replace(/^Bearer /, '') : null;
+        expireSession(storage, sentToken, onSessionExpired);
       }
-    }
-    return Promise.reject(error);
-  },
-);
+      // Permission errors and transient network failures do not invalidate a login.
+      return Promise.reject(error);
+    },
+  );
+  return instance;
+}
 
-export default client;
+export default createApiClient();

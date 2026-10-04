@@ -80,7 +80,10 @@
           <div class="workspace-symbol" aria-hidden="true">✳</div>
           <h3>{{ auth.user ? `你好，${auth.userDisplayName}` : '不止是路过。' }}</h3>
           <template v-if="auth.token"
-            ><p>连续签到 {{ auth.user?.checkin_streak || 0 }} 天，继续积攒你的联盟金币。</p>
+            ><p v-if="auth.userError" role="status">
+              {{ auth.userError }} <button @click="auth.fetchUser()" :disabled="auth.userLoading">重试</button>
+            </p>
+            <p>连续签到 {{ auth.user?.checkin_streak || 0 }} 天，继续积攒你的联盟金币。</p>
             <strong class="coin-count">{{ auth.user?.gold_coins || 0 }} <small>金币</small></strong
             ><n-button type="primary" :loading="checkinLoading" :disabled="!canCheckin" @click="checkin">{{
               canCheckin ? '完成今日签到' : '今日已签到 ✓'

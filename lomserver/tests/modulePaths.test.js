@@ -19,7 +19,7 @@ function sources(directory) {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     if (['node_modules', 'upload', 'logs', 'public', 'tests'].includes(entry.name)) return [];
     const filename = path.join(directory, entry.name);
-    return entry.isDirectory() ? sources(filename) : entry.name.endsWith('.js') ? [filename] : [];
+    return entry.isDirectory() ? sources(filename) : /\.(m?js)$/.test(entry.name) ? [filename] : [];
   });
 }
 describe('Linux-compatible source imports', () => {

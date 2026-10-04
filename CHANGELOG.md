@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.3 — 2026-10-04
+
+- Preserve login through 403 permission errors and transient network/server failures. Clear only the authenticated token rejected with 401; stale requests cannot invalidate newer sessions.
+- Handle malformed/base64url JWTs safely, synchronize expired sessions with reactive UI, share profile requests, reject stale profile responses and clear achievement caches on logout. Add a profile-refresh retry state.
+- Boot an isolated candidate container and check health/revision plus a read-only forum endpoint before replacing the running app. Keep rollback for post-replacement failures.
+- Run the built image against a separate disposable MySQL service in CI before publishing it, covering the actual production entrypoint and database-backed read contract.
+- Stop running database migrations automatically at app startup. Schema changes now require a separate, explicit backup-first operator action.
+- Version 2.0.2 passed Linux tests and image building but failed production startup; automatic rollback restored the old application. The exact startup error was not captured, so no unsupported cause is asserted.
+
 ## 2.0.2 — 2026-10-04
 
 - Make isolated integration authentication self-contained: explicitly supply and assert a one-hour test JWT expiry instead of accidentally relying on the local ignored `.env`.

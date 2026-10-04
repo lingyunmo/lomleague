@@ -9,19 +9,19 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.2 (not yet released)
+## Working batch: 2.0.3 (not yet released)
 
 - New responsive homepage, code-native isometric block world, searchable film/project/member archive, preserved historical records, check-in, and real cached Minecraft status.
 - Vite 8, Vue and compatible dependency updates, Vitest 5, ESLint 10, Multer 2.4.
 - Multer now parses ordinary filename headers as UTF-8. Manual latin1 round trips and incorrect URI decoding are removed; URLs alone encode path segments for transport.
 - Linux import casing corrected. API misses return 404 instead of hanging. Health response contains version/revision.
 - UI imports are tree-shaken, the old Markdown editor is replaced by locally bundled md-editor-v3 + DOMPurify and loaded asynchronously. Existing Markdown and safe HTML are covered by compatibility tests. Viewport/language/description metadata, mobile navigation and keyboard skip link are fixed.
-- Workspace-lockfile Docker build on Node 24, secret/upload exclusions, immutable image tags, app-only deployment, health gate, previous-image rollback; MySQL image/config/mount unchanged.
+- Workspace-lockfile Docker build on Node 24, secret/upload exclusions, immutable image tags, CI container smoke with a disposable database, server-side candidate preflight, app-only deployment, health gate and previous-image rollback; MySQL image/config/mount unchanged. Application startup no longer runs migration commands.
 
 ## Checks so far
 
 - `pnpm build` passed repeatedly. `pnpm lint` has zero errors (13 existing warnings).
-- `pnpm test` with `LOM_TEST_DATABASE_URL`: 67 passing tests, including real local HTTP multipart → filesystem → URL fixtures, status caching/failures, app health/API contracts, case-sensitive imports, archive search, Markdown sanitization, no remote editor asset injection, and real MySQL registration/login/forum/permission/reply/like/notification/check-in integration.
+- `pnpm test` with `LOM_TEST_DATABASE_URL`: 98 passing tests (65 backend, 33 frontend), including real local HTTP multipart → filesystem → URL fixtures, status caching/failures, app health/API contracts, case-sensitive Git/filesystem imports, read-only smoke contracts, archive search, Markdown sanitization, no remote editor asset injection, login-expiry/error/race regressions, and real MySQL registration/login/forum/permission/reply/like/notification/check-in integration.
 - `pnpm audit --prod`: no known vulnerabilities. Prisma's vulnerable deepmerge-ts dependency is overridden to 8.x and Prisma generation has passed with that override.
 - Browser: desktop page renders, search “Lanthanum” returns the exact project, 390px layout has no horizontal overflow, mobile menu expands.
 - A separate MySQL 8.0.46 process runs on 127.0.0.1:13306 from a newly initialized temporary directory, never the existing MySQL80 service's data directory. The database is `lom_local_test`, containing only synthetic fixture data. Its schema synchronization was explicitly scoped to that empty local database. CI uses its own disposable `lom_ci_test` service; no schema synchronization is run against production.
@@ -29,11 +29,13 @@
 - Docker Desktop daemon was unavailable; `docker desktop start` and `docker info` did not finish, and these two command sessions were stopped. Do not claim the container build has passed until actually tested.
 - Commit b784fdf (2.0.0) was signed with the existing local identity, pushed, and confirmed `verified: true` / `valid` by GitHub. Run 37168510408 rejected a Windows/Git case mismatch (`ArticleRoutes.js` in Git vs `articleRoutes.js` on disk), and deployment was skipped. The fix records a real case-only Git rename and makes the local import tests consult Git's canonical filenames as well as the filesystem.
 - Commit 5f2dc5a (2.0.1) also has a valid GitHub signature. Run 37168651373 passed the import checks but exposed missing `JWT_EXPIRATION` in the disposable CI login fixture. The fixture now explicitly stubs 3600 seconds and asserts the token lifetime, so tests no longer accidentally depend on the local ignored `.env`. Deployment was skipped; production is still unchanged.
+- Commit 77c8282 (2.0.2) is also GitHub-verified. Run 37168930554 passed all Linux checks and the Docker build but the production container restarted; the health gate rolled back to the previous image. The old public health endpoint returned 200 again. The exact startup error was not captured. The next batch adds a candidate-container preflight before replacement and removes automatic schema migration from app startup. Existing migration SQL is present in Git and has not been changed; the earlier filesystem-only inventory did not reveal it.
+- Local next-batch auth fixes cover invalid JWTs, 403/network-error session preservation, same-token 401 expiry, stale requests, deduplicated profile loading and logout cache cleanup. They are not deployed yet.
 
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 28051 at port 3000, test DB port 13306.
+- Backend preview process session 88142 at port 3000, test DB port 13306, revision `local-preview-v2.0.3`. The actual read-only smoke script passed against it. Browser production-preview logout correctly removes cached identity and updates navigation/member UI.
 - Production Vite preview session 5574 at `http://127.0.0.1:4173`.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.

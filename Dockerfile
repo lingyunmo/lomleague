@@ -24,4 +24,5 @@ ARG APP_REVISION=local
 ENV NODE_ENV=production APP_REVISION=$APP_REVISION
 EXPOSE 3000
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=6 CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
-CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node index.js"]
+# Schema changes require a separate, backup-first operator action; app startup is read-only.
+CMD ["node", "index.js"]

@@ -1,8 +1,12 @@
-// utils.js
-export const isTokenExpired = (token) => {
-    if (!token) return true;  // 如果没有 token，认为过期
-
-    const payload = JSON.parse(atob(token.split('.')[1]));  // 解码 JWT 获取 payload
-    const expirationDate = new Date(payload.exp * 1000);  // 过期时间 (秒转毫秒)
-    return expirationDate < new Date();  // 如果当前时间超过过期时间，认为过期
-};
+// Client-side expiry scheduling only; the server still verifies JWT signatures.
+export function isTokenExpired(token, now = Date.now()) {
+  try {
+    if (typeof token !== 'string' || token.split('.').length !== 3) return true;
+    const encoded = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(encoded.padEnd(Math.ceil(encoded.length / 4) * 4, '=')), (c) => c.charCodeAt(0));
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    return typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || payload.exp * 1000 <= now;
+  } catch {
+    return true;
+  }
+}

@@ -64,6 +64,17 @@ jobs:
     name: 🚀 构建 & 部署
     needs: test
     runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: testpass123
+          MYSQL_DATABASE: lom_ci_test
+        options: >-
+          --health-cmd "mysqladmin ping -h localhost"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     permissions:
       contents: read
       packages: write
@@ -80,6 +91,24 @@ jobs:
 
       - name: 🐳 构建 Docker 镜像
         run: docker build --build-arg APP_REVISION=${{ github.sha }} -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest .
+
+      - name: 🧪 隔离数据库容器启动验收
+        env:
+          CI_NETWORK: ${{ job.services.mysql.network }}
+        run: |
+          set -e
+          # ONLY the empty disposable CI database; never any production connection.
+          docker run --rm --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test ${{ env.IMAGE }}:${{ github.sha }} pnpm exec prisma db push --skip-generate
+          trap 'docker rm -f lom-ci-smoke >/dev/null 2>&1 || true' EXIT
+          docker run -d --name lom-ci-smoke --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test -e JWT_SECRET=ci-smoke-only -e JWT_EXPIRATION=3600 ${{ env.IMAGE }}:${{ github.sha }}
+          for attempt in $(seq 1 15); do
+            if docker exec lom-ci-smoke node scripts/smoke.mjs ${{ github.sha }}; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs --tail 60 lom-ci-smoke
+          exit 1
 
       - name: 📤 推送镜像到 GHCR
         run: |
@@ -110,6 +139,24 @@ jobs:
             export APP_IMAGE_TAG=${{ github.sha }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f docker-compose.prod.yml pull app
+            # Boot a separate candidate first. No host ports, migration commands or database writes.
+            preflight_name=lom-preflight-${{ github.run_id }}
+            trap 'docker rm -f "$preflight_name" >/dev/null 2>&1 || true' EXIT
+            docker compose -f docker-compose.prod.yml run -d --no-deps --name "$preflight_name" app
+            preflight_healthy=false
+            for attempt in $(seq 1 15); do
+              if docker exec "$preflight_name" node scripts/smoke.mjs ${{ github.sha }}; then
+                preflight_healthy=true
+                break
+              fi
+              sleep 2
+            done
+            if [ "$preflight_healthy" != true ]; then
+              echo "Candidate failed preflight. Existing application is untouched."
+              docker logs --tail 60 "$preflight_name" 2>&1 | sed -E 's#(mysql|https?)://[^[:space:]]+#\1://[redacted]#g' | grep -E 'Error|ERR_|Cannot find|Prisma|prisma|SyntaxError|at ' || true
+              exit 1
+            fi
+            docker rm -f "$preflight_name" >/dev/null
             # Update only the application; never recreate MySQL or its data volume.
             started=false
             if docker compose -f docker-compose.prod.yml up -d --no-deps app; then
@@ -127,6 +174,7 @@ jobs:
             fi
             if [ "$healthy" != true ]; then
               echo "New application failed its health check. Restoring the previous application image."
+              docker logs --tail 60 lom-app 2>&1 | sed -E 's#(mysql|https?)://[^[:space:]]+#\1://[redacted]#g' | grep -E 'Error|ERR_|Cannot find|Prisma|prisma|SyntaxError|at ' || true
               if [ -n "$previous_image" ]; then
                 export APP_IMAGE_TAG="${previous_image##*:}"
                 docker compose -f docker-compose.prod.yml up -d --no-deps app
