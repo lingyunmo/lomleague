@@ -9,7 +9,7 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.0 (not yet released)
+## Working batch: 2.0.1 (not yet released)
 
 - New responsive homepage, code-native isometric block world, searchable film/project/member archive, preserved historical records, check-in, and real cached Minecraft status.
 - Vite 8, Vue and compatible dependency updates, Vitest 5, ESLint 10, Multer 2.4.
@@ -27,7 +27,7 @@
 - A separate MySQL 8.0.46 process runs on 127.0.0.1:13306 from a newly initialized temporary directory, never the existing MySQL80 service's data directory. The database is `lom_local_test`, containing only synthetic fixture data. Its schema synchronization was explicitly scoped to that empty local database. CI uses its own disposable `lom_ci_test` service; no schema synchronization is run against production.
 - The browser production-build preview loads the real test forum post and correctly renders Chinese, Markdown, emoji and literal percent text. Synthetic-account login, reactive navigation, check-in state, editor source/preview compatibility, and light/dark homepage rendering passed. The editor's default CDN scripts were caught in browser QA and removed; all editor extension assets are local.
 - Docker Desktop daemon was unavailable; `docker desktop start` and `docker info` did not finish, and these two command sessions were stopped. Do not claim the container build has passed until actually tested.
-- Existing GitHub HEAD fb5885f is verified by GitHub API. New commit/signature/deployment still pending.
+- Commit b784fdf (2.0.0) was signed with the existing local identity, pushed, and confirmed `verified: true` / `valid` by GitHub. Run 37168510408 rejected a Windows/Git case mismatch (`ArticleRoutes.js` in Git vs `articleRoutes.js` on disk), and deployment was skipped. The fix records a real case-only Git rename and makes the local import tests consult Git's canonical filenames as well as the filesystem.
 
 ## Current processes
 

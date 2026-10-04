@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.1 — 2026-10-04
+
+- Fix a Windows/Git filename-case mismatch before deployment: Git now tracks `articleRoutes.js` exactly as imported.
+- Check Git's canonical tracked filenames as well as physical directory entries in local import tests.
+- The 2.0.0 CI test gate rejected the inconsistent path and skipped deployment; no production update or database change occurred.
+
 ## 2.0.0 — 2026-10-04
 
 - Rebuild the homepage as a responsive Minecraft creation portal with an isometric block world, searchable project/film/member archive, community activity, check-in and copyable server address.

@@ -4,6 +4,7 @@ vi.mock('../services/serverStatusService.js', () => ({
   getServerStatus: async () => ({ address: 'mc.bzlom.cn', online: null, stale: true }),
 }));
 import { startServer } from '../index.js';
+import packageInfo from '../package.json' with { type: 'json' };
 
 describe('application HTTP contract without production data', () => {
   let server, baseUrl;
@@ -18,7 +19,7 @@ describe('application HTTP contract without production data', () => {
   it('publishes the application version', async () => {
     const response = await fetch(`${baseUrl}/api/health`);
     expect(response.status).toBe(200);
-    expect(await response.json()).toMatchObject({ version: '2.0.0' });
+    expect(await response.json()).toMatchObject({ version: packageInfo.version });
   });
   it('returns a bounded server-status contract', async () => {
     const response = await fetch(`${baseUrl}/api/server/status`);
