@@ -79,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, watch, onBeforeUnmount, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
 import { articleApi } from '../../api/article.js';
@@ -102,6 +102,33 @@ const loading = ref(true);
 const isEditing = ref(false);
 const editForm = ref({ title: '', content: '' });
 const savingEdit = ref(false);
+let detailGeneration = 0;
+let privateGeneration = 0;
+let articleRequest = 0;
+let confirmationRequest = 0;
+let disposed = false;
+let pendingDialog;
+const context = () => ({
+  id: route.params.id,
+  generation: detailGeneration,
+  privateGeneration,
+  token: authStore.token,
+});
+const isCurrent = (request, privateOperation = false) =>
+  !disposed &&
+  route.name === 'Article' &&
+  request.id === route.params.id &&
+  request.generation === detailGeneration &&
+  (!privateOperation || (request.token === authStore.token && request.privateGeneration === privateGeneration));
+const resetPrivateState = () => {
+  privateGeneration++;
+  confirmationRequest++;
+  pendingDialog?.destroy();
+  pendingDialog = undefined;
+  isEditing.value = false;
+  savingEdit.value = false;
+  editForm.value = { title: '', content: '' };
+};
 
 const startEdit = () => {
   editForm.value = { title: article.value.title, content: article.value.content };
@@ -109,31 +136,40 @@ const startEdit = () => {
 };
 
 const saveEdit = async () => {
+  if (savingEdit.value || !isEditing.value) return;
+  const request = context();
+  const articleId = article.value.id;
+  const payload = { ...editForm.value };
   savingEdit.value = true;
   try {
-    await articleApi.updateArticle(article.value.id, editForm.value);
-    article.value.title = editForm.value.title;
-    article.value.content = editForm.value.content;
+    await articleApi.updateArticle(articleId, payload);
+    if (!isCurrent(request, true)) return;
+    article.value.title = payload.title;
+    article.value.content = payload.content;
     isEditing.value = false;
     message.success('更新成功');
   } catch {
+    if (!isCurrent(request, true)) return;
     message.error('更新失败');
   } finally {
-    savingEdit.value = false;
+    if (isCurrent(request, true)) savingEdit.value = false;
   }
 };
 
 // 获取文章详情
 const fetchArticle = async () => {
-  const articleId = route.params.id;
+  const request = context();
+  const sequence = ++articleRequest;
   try {
-    const response = await articleApi.getArticle(articleId);
+    const response = await articleApi.getArticle(request.id);
+    if (!isCurrent(request) || sequence !== articleRequest) return;
     article.value = response.data || {};
   } catch {
+    if (!isCurrent(request) || sequence !== articleRequest) return;
     message.error('获取文章失败，请稍后重试');
     await router.push('/articles');
   } finally {
-    loading.value = false;
+    if (isCurrent(request) && sequence === articleRequest) loading.value = false;
   }
 };
 
@@ -143,25 +179,38 @@ const goBack = () => {
 };
 
 // 复制链接
-const copyLink = () => {
+const copyLink = async () => {
+  const request = context();
   const url = window.location.href;
-  navigator.clipboard.writeText(url).then(() => {
-    message.success('链接已复制到剪贴板，快去分享吧！');
-  });
+  try {
+    await navigator.clipboard.writeText(url);
+    if (isCurrent(request)) message.success('链接已复制到剪贴板，快去分享吧！');
+  } catch {
+    if (isCurrent(request)) message.error('复制失败，请手动复制浏览器地址');
+  }
 };
 
 const confirmDeleteArticle = () => {
-  dialog.warning({
+  pendingDialog?.destroy();
+  const sequence = ++confirmationRequest;
+  const request = context();
+  const articleId = article.value.id;
+  let confirmed = false;
+  pendingDialog = dialog.warning({
     title: '确认删除',
     content: '删除后无法恢复，确定删除此文章？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
+      if (confirmed || sequence !== confirmationRequest || !isCurrent(request, true)) return;
+      confirmed = true;
       try {
-        await articleApi.deleteArticle(article.value.id);
+        await articleApi.deleteArticle(articleId);
+        if (!isCurrent(request, true)) return;
         message.success('文章已删除');
         router.push({ name: 'Articles' });
       } catch {
+        if (!isCurrent(request, true)) return;
         message.error('删除失败');
       }
     },
@@ -170,8 +219,22 @@ const confirmDeleteArticle = () => {
 
 const attachments = computed(() => parseAttachments(article.value.attachments));
 
-onMounted(() => {
-  fetchArticle();
+watch(
+  () => (route.name === 'Article' ? route.params.id : null),
+  (articleId) => {
+    detailGeneration++;
+    resetPrivateState();
+    article.value = {};
+    loading.value = true;
+    if (articleId == null) return;
+    fetchArticle();
+  },
+  { immediate: true, flush: 'sync' },
+);
+watch(() => authStore.token, resetPrivateState, { flush: 'sync' });
+onBeforeUnmount(() => {
+  disposed = true;
+  resetPrivateState();
 });
 </script>
 

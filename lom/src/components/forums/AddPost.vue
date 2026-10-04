@@ -1,23 +1,19 @@
 <template>
   <n-form ref="formRef" :model="formData" :rules="rules" label-placement="left">
     <n-form-item label="内容" path="content" required>
-      <v-md-editor
-          v-model="formData.content"
-          placeholder="输入回复内容（支持 Markdown 语法）..."
-          height="300px"
-      />
+      <v-md-editor v-model="formData.content" placeholder="输入回复内容（支持 Markdown 语法）..." height="300px" />
     </n-form-item>
 
     <n-form-item label="附件（可选）">
       <n-upload
-          :custom-request="customUpload"
-          accept="image/*,video/*,audio/*,.pdf,.zip"
-          list-type="text"
-          :show-upload-list="true"
-          multiple
-          :max="5"
-          :default-file-list="defaultFileList"
-          @remove="handleRemove"
+        :custom-request="customUpload"
+        accept="image/*,video/*,audio/*,.pdf,.zip"
+        list-type="text"
+        :show-upload-list="true"
+        multiple
+        :max="5"
+        :default-file-list="defaultFileList"
+        @remove="handleRemove"
       >
         <n-button>点击上传</n-button>
       </n-upload>
@@ -26,12 +22,7 @@
     <n-form-item>
       <n-space justify="end" :size="12">
         <n-button @click="emit('cancel')">取消</n-button>
-        <n-button
-            type="primary"
-            @click="handleSubmit"
-            :disabled="!isReadyToSubmit"
-            :loading="submitting"
-        >
+        <n-button type="primary" @click="handleSubmit" :disabled="!isReadyToSubmit" :loading="submitting">
           提交
         </n-button>
       </n-space>
@@ -44,7 +35,7 @@
  * AddPost — 创建论坛回复表单
  * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
  */
-import { ref, onMounted } from 'vue';
+import { ref, watch, onBeforeUnmount, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
 import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
@@ -69,6 +60,26 @@ const defaultFileList = ref([]);
 const formRef = ref(null);
 
 const { customUpload, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
+let generation = 0;
+let disposed = false;
+const context = () => ({ postId: props.postId, token: authStore.token, generation });
+const isCurrent = (request) =>
+  !disposed &&
+  request.generation === generation &&
+  request.postId === props.postId &&
+  request.token === authStore.token;
+watch(
+  () => [props.postId, authStore.token],
+  () => {
+    generation++;
+    submitting.value = false;
+  },
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  disposed = true;
+  generation++;
+});
 
 const rules = {
   content: [
@@ -82,29 +93,35 @@ const rules = {
 };
 
 const handleSubmit = async () => {
+  if (submitting.value) return;
+  const request = context();
   try {
     submitting.value = true;
     await formRef.value?.validate();
+    if (!isCurrent(request)) return;
 
     await forumApi.createReply({
-      postId: props.postId,
+      postId: request.postId,
       content: formData.value.content,
       attachments: attachments.value,
       region: formData.value.region,
     });
+    if (!isCurrent(request)) return;
 
     message.success('回帖成功');
     emit('created');
   } catch (error) {
+    if (!isCurrent(request)) return;
     message.error(error.response?.data?.message || '提交失败');
   } finally {
-    submitting.value = false;
+    if (isCurrent(request)) submitting.value = false;
   }
 };
 
 const fetchUserRegion = async () => {
+  const request = context();
   const data = await authStore.fetchUser();
-  if (data) {
+  if (data && isCurrent(request)) {
     formData.value.region = data.lastLoginRegion?.region || '未知';
   }
 };
@@ -114,5 +131,4 @@ onMounted(() => {
 });
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

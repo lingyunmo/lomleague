@@ -71,11 +71,11 @@
       </n-card>
 
       <!-- 回复列表 -->
-      <div class="replies-container">
+      <div class="replies-container" :aria-busy="repliesLoading">
         <n-space vertical>
           <n-space justify="space-between" align="center">
             <h3 class="section-title">
-              <n-icon><Chatbubbles /></n-icon> 共 {{ replyTotal }} 条回复
+              <n-icon><Chatbubbles /></n-icon> {{ replyTotal === null ? '回复讨论' : `共 ${replyTotal} 条回复` }}
             </h3>
             <n-button type="primary" @click="openNewReply" style="margin-bottom: 12px">
               <template #icon
@@ -85,8 +85,10 @@
             </n-button>
           </n-space>
 
+          <p v-if="repliesLoading" role="status">正在加载回复…</p>
+          <ListFetchFeedback :message="repliesError" @retry="fetchReplies" />
           <n-empty
-            v-if="!repliesLoading && replies.length === 0"
+            v-if="!repliesLoading && !repliesError && replies.length === 0"
             description="暂无回复，抢个沙发吧！"
             class="empty-state"
           />
@@ -133,7 +135,7 @@
           <Pagination
             v-model:page="replyPage"
             v-model:page-size="replyPageSize"
-            :total="replyTotal"
+            :total="replyTotal ?? 0"
             @change="fetchReplies"
           />
         </n-space>
@@ -147,7 +149,13 @@
       preset="card"
       style="width: 60%; padding: 2px; border-radius: 16px; overflow: auto"
     >
-      <AddPost :postId="post.id" @created="handleReplyCreated" @cancel="showReplyModal = false" />
+      <AddPost
+        v-if="showReplyModal"
+        :key="post.id"
+        :postId="post.id"
+        @created="handleReplyCreated"
+        @cancel="showReplyModal = false"
+      />
     </n-modal>
   </div>
 
@@ -162,7 +170,7 @@
 // Issue #9: 从 409 行缩减，API 调用改用 forumApi 模块
 // Issue #12: API 端点路径封装到 api/forum.js
 // ============================================================
-import { ref, onMounted, computed } from 'vue';
+import { ref, watch, onBeforeUnmount, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
 import { forumApi } from '../../api/forum.js';
@@ -171,6 +179,7 @@ import { formatDate } from '../../utils/date.js';
 import { parseAttachments } from '../../utils/attachment.js';
 import { returnToList } from '../../utils/returnToList.js';
 import Pagination from '../Pagination.vue';
+import ListFetchFeedback from '../ListFetchFeedback.vue';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import AddPost from './AddPost.vue';
 import LikeButton from '../LikeButton.vue';
@@ -193,40 +202,78 @@ const editPostForm = ref({ title: '', content: '' });
 // ==================== 回复状态 ====================
 const replies = ref([]);
 const repliesLoading = ref(false);
+const repliesError = ref(null);
 const replyPage = ref(1);
 const replyPageSize = ref(20);
-const replyTotal = ref(0);
+const replyTotal = ref(null);
 const showReplyModal = ref(false);
 
 const attachments = computed(() => parseAttachments(post.value.attachments));
+let detailGeneration = 0;
+let privateGeneration = 0;
+let postRequest = 0;
+let replyRequest = 0;
+let confirmationRequest = 0;
+let disposed = false;
+let pendingDialog;
+
+const context = () => ({
+  id: route.params.id,
+  generation: detailGeneration,
+  privateGeneration,
+  token: authStore.token,
+});
+const isCurrent = (request, privateOperation = false) =>
+  !disposed &&
+  route.name === 'Forum' &&
+  request.id === route.params.id &&
+  request.generation === detailGeneration &&
+  (!privateOperation || (request.token === authStore.token && request.privateGeneration === privateGeneration));
+
+const resetPrivateState = () => {
+  privateGeneration++;
+  confirmationRequest++;
+  pendingDialog?.destroy();
+  pendingDialog = undefined;
+  isEditingPost.value = false;
+  savingEdit.value = false;
+  editPostForm.value = { title: '', content: '' };
+  showReplyModal.value = false;
+};
 
 // ==================== 数据获取 ====================
 const fetchPost = async () => {
-  const postId = route.params.id;
+  const request = context();
+  const sequence = ++postRequest;
   try {
-    const response = await forumApi.getPost(postId);
+    const response = await forumApi.getPost(request.id);
+    if (!isCurrent(request) || sequence !== postRequest) return;
     post.value = response.data || {};
   } catch {
+    if (!isCurrent(request) || sequence !== postRequest) return;
     message.error('获取帖子失败，请稍后重试');
     await router.push('/forums');
   } finally {
-    loading.value = false;
+    if (isCurrent(request) && sequence === postRequest) loading.value = false;
   }
 };
 
 const fetchReplies = async () => {
+  const request = context();
+  const sequence = ++replyRequest;
+  const params = { page: replyPage.value, pageSize: replyPageSize.value };
   repliesLoading.value = true;
+  repliesError.value = null;
   try {
-    const response = await forumApi.getReplies(route.params.id, {
-      page: replyPage.value,
-      pageSize: replyPageSize.value,
-    });
+    const response = await forumApi.getReplies(request.id, params);
+    if (!isCurrent(request) || sequence !== replyRequest) return;
     replies.value = response.data.replies;
     replyTotal.value = response.data.total;
   } catch {
-    message.error('获取回复失败');
+    if (!isCurrent(request) || sequence !== replyRequest) return;
+    repliesError.value = '获取回复失败，请重新加载。';
   } finally {
-    repliesLoading.value = false;
+    if (isCurrent(request) && sequence === replyRequest) repliesLoading.value = false;
   }
 };
 
@@ -241,36 +288,48 @@ const cancelEditPost = () => {
 };
 
 const saveEditPost = async () => {
+  if (savingEdit.value || !isEditingPost.value) return;
+  const request = context();
+  const postId = post.value.id;
+  const payload = { ...editPostForm.value };
   savingEdit.value = true;
   try {
-    const res = await forumApi.updatePost(post.value.id, {
-      title: editPostForm.value.title,
-      content: editPostForm.value.content,
-    });
+    const res = await forumApi.updatePost(postId, payload);
+    if (!isCurrent(request, true)) return;
     post.value.title = res.data.title;
     post.value.content = res.data.content;
     isEditingPost.value = false;
     message.success('帖子已更新');
   } catch {
+    if (!isCurrent(request, true)) return;
     message.error('更新失败');
   } finally {
-    savingEdit.value = false;
+    if (isCurrent(request, true)) savingEdit.value = false;
   }
 };
 
 // ==================== 删除 ====================
 const confirmDeletePost = () => {
-  dialog.warning({
+  pendingDialog?.destroy();
+  const sequence = ++confirmationRequest;
+  const request = context();
+  const postId = post.value.id;
+  let confirmed = false;
+  pendingDialog = dialog.warning({
     title: '确认删除',
     content: '删除帖子将同时删除所有回复，且无法恢复。确定删除？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
+      if (confirmed || sequence !== confirmationRequest || !isCurrent(request, true)) return;
+      confirmed = true;
       try {
-        await forumApi.deletePost(post.value.id);
+        await forumApi.deletePost(postId);
+        if (!isCurrent(request, true)) return;
         message.success('帖子已删除');
         router.push('/forums');
       } catch {
+        if (!isCurrent(request, true)) return;
         message.error('删除失败');
       }
     },
@@ -278,17 +337,25 @@ const confirmDeletePost = () => {
 };
 
 const confirmDeleteReply = (replyId) => {
-  dialog.warning({
+  pendingDialog?.destroy();
+  const sequence = ++confirmationRequest;
+  const request = context();
+  let confirmed = false;
+  pendingDialog = dialog.warning({
     title: '确认删除',
     content: '确定删除此回复？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
+      if (confirmed || sequence !== confirmationRequest || !isCurrent(request, true)) return;
+      confirmed = true;
       try {
         await forumApi.deleteReply(replyId);
+        if (!isCurrent(request, true)) return;
         message.success('回复已删除');
         fetchReplies();
       } catch {
+        if (!isCurrent(request, true)) return;
         message.error('删除失败');
       }
     },
@@ -307,10 +374,28 @@ const handleReplyCreated = () => {
 };
 const getReplyAttachments = (reply) => parseAttachments(reply.attachments);
 
-// ==================== 初始化 ====================
-onMounted(() => {
-  fetchPost();
-  fetchReplies();
+// A detail component is reused when only the route id changes.
+watch(
+  () => (route.name === 'Forum' ? route.params.id : null),
+  (postId) => {
+    detailGeneration++;
+    resetPrivateState();
+    post.value = {};
+    loading.value = true;
+    replies.value = [];
+    replyPage.value = 1;
+    replyPageSize.value = 20;
+    replyTotal.value = null;
+    if (postId == null) return;
+    fetchPost();
+    fetchReplies();
+  },
+  { immediate: true, flush: 'sync' },
+);
+watch(() => authStore.token, resetPrivateState, { flush: 'sync' });
+onBeforeUnmount(() => {
+  disposed = true;
+  resetPrivateState();
 });
 </script>
 

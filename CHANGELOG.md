@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.14 — 2026-10-04
+
+- Reload reused forum/article detail components when their route id changes. Ignore late reads and errors from previous routes, visits and unmounted components; do not fetch unrelated routes while navigating away.
+- Keep the newest reply page, reset pagination for a new parent post and expose loading/retryable errors without presenting a failed request as an empty discussion. Retain existing replies during a failed refresh.
+- Capture edit payloads and deletion identities. Destroy each detail's own old confirmation on navigation/session changes; ignore stale mutation feedback and prevent duplicate confirmation/save requests. Existing author/admin rules and server-side permissions remain unchanged.
+- Scope reply validation/submission and member-region results to the current form, parent and login session. Closing or replacing the form cannot submit after late validation or update a new page after a late response. Already-sent requests are not represented as canceled or undone.
+- Add detail state-race, real-router reuse and reply-form regressions, plus manual-copy feedback for unavailable article clipboard access. No database schema, uploads, filename or timestamp changes.
+
 ## 2.0.13 — 2026-10-04
 
 - Add a locally computed Minecraft coordinate tool linked from the homepage server card: exact 8:1 Overworld/Nether X/Z conversion, source-dimension chunk indices, 0–15 local positions and block ranges.
