@@ -107,9 +107,17 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
       } else {
         throw new Error('服务器未返回文件 URL');
       }
-    } catch {
+    } catch (error) {
       if (!isCurrent()) return;
-      message.error('附件上传失败');
+      const detail = error?.response?.data?.message;
+      message.error(
+        error?.response?.status >= 400 &&
+          (error.response.status < 500 || error.response.status === 503) &&
+          typeof detail === 'string' &&
+          detail.length <= 160
+          ? detail
+          : '附件上传失败',
+      );
       onError();
     } finally {
       if (inFlight.get(key) === request) {

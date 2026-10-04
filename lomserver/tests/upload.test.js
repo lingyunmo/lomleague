@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createFileRouter } from '../routes/fileRoutes.js';
@@ -11,11 +11,15 @@ describe('real multipart upload → disk → returned URL', () => {
   let directory, server, baseUrl;
   const secret = 'local-upload-test-only';
   const token = jwt.sign({ id: 7 }, secret);
+  const png = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lS8AAAAASUVORK5CYII=',
+    'base64',
+  );
   beforeAll(async () => {
     vi.stubEnv('JWT_SECRET', secret);
     directory = await mkdtemp(path.join(tmpdir(), 'lom-upload-test-'));
     const app = express();
-    app.use('/api/file', createFileRouter(directory));
+    app.use('/api/file', createFileRouter(directory, { rateLimit: 1000 }));
     app.use('/api/upload', createUploadStatic(directory));
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));
@@ -30,7 +34,7 @@ describe('real multipart upload → disk → returned URL', () => {
     'keeps %s identical through upload, storage and reading',
     async (name) => {
       const body = new FormData();
-      body.append('file', new Blob(['fixture-bytes'], { type: 'image/png' }), name);
+      body.append('file', new Blob([png], { type: 'image/png' }), name);
       const response = await fetch(`${baseUrl}/api/file/upload`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
@@ -41,18 +45,24 @@ describe('real multipart upload → disk → returned URL', () => {
       expect(data.filename).toMatch(/^\d+_/);
       expect(data.filename.replace(/^\d+_/, '')).toBe(name);
       expect(await readdir(path.join(directory, '7'))).toContain(data.filename);
-      expect(await readFile(path.join(directory, '7', data.filename), 'utf8')).toBe('fixture-bytes');
+      expect(await readFile(path.join(directory, '7', data.filename))).toEqual(png);
       const download = await fetch(`${baseUrl}${data.url}`);
       expect(download.status).toBe(200);
       expect(download.headers.get('x-content-type-options')).toBe('nosniff');
       expect(download.headers.get('content-security-policy')).toContain('sandbox allow-downloads');
-      expect(await download.text()).toBe('fixture-bytes');
+      expect(Buffer.from(await download.arrayBuffer())).toEqual(png);
     },
   );
   it('does not double-decode UTF-8 filename* parameters', async () => {
     const boundary = 'lom-test-boundary';
     const name = '论文终稿.png';
-    const body = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename*=UTF-8''${encodeURIComponent(name)}\r\nContent-Type: image/png\r\n\r\nfixture\r\n--${boundary}--\r\n`;
+    const body = Buffer.concat([
+      Buffer.from(
+        `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename*=UTF-8''${encodeURIComponent(name)}\r\nContent-Type: image/png\r\n\r\n`,
+      ),
+      png,
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ]);
     const response = await fetch(`${baseUrl}/api/file/upload`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, 'Content-Type': `multipart/form-data; boundary=${boundary}` },
@@ -101,7 +111,7 @@ describe('real multipart upload → disk → returned URL', () => {
     expect(response.status).toBe(400);
     expect(await readdir(path.join(directory, '7'))).toEqual(before);
   });
-  it('isolates an active filename even if a client claims an allowed image MIME type', async () => {
+  it('rejects new active documents but continues isolating an already stored legacy document', async () => {
     const bytes =
       '<!doctype html><h1>Local isolation fixture</h1><script>document.body.dataset.executed="yes"</script>';
     const body = new FormData();
@@ -111,9 +121,10 @@ describe('real multipart upload → disk → returned URL', () => {
       headers: { Authorization: `Bearer ${token}` },
       body,
     });
-    expect(response.status).toBe(200);
-    const data = await response.json();
-    const download = await fetch(`${baseUrl}${data.url}`);
+    expect(response.status).toBe(400);
+    const filename = '1_legacy-isolation.html';
+    await writeFile(path.join(directory, '7', filename), bytes);
+    const download = await fetch(`${baseUrl}/api/upload/7/${filename}`);
     expect(download.status).toBe(200);
     const policy = download.headers.get('content-security-policy');
     expect(policy).toContain('sandbox allow-downloads');

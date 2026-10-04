@@ -103,6 +103,8 @@ jobs:
           docker run -d --name lom-ci-smoke --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test -e JWT_SECRET=ci-smoke-only -e JWT_EXPIRATION=3600 ${{ env.IMAGE }}:${{ github.sha }}
           for attempt in $(seq 1 15); do
             if docker exec lom-ci-smoke node scripts/smoke.mjs ${{ github.sha }}; then
+              docker stop --time 12 lom-ci-smoke >/dev/null
+              test "$(docker inspect -f '{{.State.ExitCode}}' lom-ci-smoke)" = 0
               exit 0
             fi
             sleep 2
@@ -122,8 +124,8 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          source: docker-compose.prod.yml
-          target: /root/minecraft/lomleague
+          source: docker-compose.prod.yml,ops
+          target: /root/minecraft/lomleague/.deploy-${{ github.run_id }}
 
       - name: 🖥️ SSH 部署
         uses: appleboy/ssh-action@v1.2.5
@@ -135,6 +137,17 @@ jobs:
           script: |
             set -e
             cd /root/minecraft/lomleague
+            # Serialize only lom maintenance; backups never race an application replacement.
+            exec 9>.ops-secrets/maintenance.lock
+            flock -w 120 9
+            # Install transferred code/config only while holding the maintenance lock.
+            staging_directory=/root/minecraft/lomleague/.deploy-${{ github.run_id }}
+            test "$(realpath -e "$staging_directory")" = "$staging_directory"
+            cp "$staging_directory/docker-compose.prod.yml" docker-compose.prod.yml
+            mkdir -p ops
+            cp -a "$staging_directory/ops/." ops/
+            # Explicit per-run source/config scratch, never business data or a project root.
+            rm -rf -- "$staging_directory"
             previous_image=$(docker inspect -f '{{.Config.Image}}' lom-app 2>/dev/null || true)
             export APP_IMAGE_TAG=${{ github.sha }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin

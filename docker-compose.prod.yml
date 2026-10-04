@@ -27,9 +27,9 @@ services:
       - ./upload:/app/lomserver/upload
     env_file:
       - .env
+      - .ops-secrets/runtime.env
     environment:
       NODE_ENV: production
-      DATABASE_URL: mysql://root:${DB_PASSWORD}@mysql:3306/${DB_NAME:-lom}
     networks:
       - common-net
     depends_on:

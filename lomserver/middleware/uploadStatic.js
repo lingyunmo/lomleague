@@ -14,5 +14,5 @@ export function setUploadHeaders(res, filePath) {
 }
 
 export function createUploadStatic(directory) {
-  return express.static(directory, { setHeaders: setUploadHeaders });
+  return express.static(directory, { dotfiles: 'ignore', setHeaders: setUploadHeaders });
 }

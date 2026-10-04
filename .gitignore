@@ -9,6 +9,9 @@ dist-ssr/
 .env
 .env.local
 .env.*.local
+.ops-secrets/
+backups/
+mysql_data/
 
 # Logs
 logs/

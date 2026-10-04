@@ -4,3 +4,4 @@ upload/
 logs/
 *.log
 *.sql
+!prisma/migrations/**/migration.sql

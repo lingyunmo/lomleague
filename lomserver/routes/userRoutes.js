@@ -11,6 +11,7 @@ import UserService from '../services/userService.js';
 import UserDao from '../dao/UserDao.js';
 import prisma from '../dao/prismaClient.js';
 import { getUserFrame } from '../utils/userFrame.js';
+import { avatarSchema } from '../utils/attachmentSchema.js';
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ const registerSchema = z.object({
   username: z.string().min(2).max(50),
   password: z.string().min(6).max(100),
   email: z.string().email(),
-  avatar: z.string().optional(),
+  avatar: avatarSchema,
 });
 
 const loginSchema = z.object({
@@ -34,7 +35,7 @@ const updateUserSchema = z
   .object({
     username: z.string().min(2).max(50).optional(),
     email: z.string().email().optional(),
-    avatar: z.string().optional(),
+    avatar: avatarSchema,
   })
   .refine((data) => data.username || data.email || data.avatar, {
     message: '至少需要提供 username、email 或 avatar 中的一个',

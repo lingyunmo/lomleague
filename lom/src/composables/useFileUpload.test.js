@@ -47,6 +47,38 @@ function uploadOptions(id = 'actual-naive-id') {
   };
 }
 
+describe('bounded upload rejection feedback', () => {
+  it.each([400, 413, 429, 503])('surfaces a bounded %s rejection and allows retry', async (status) => {
+    fixtures.upload.mockRejectedValue({ response: { status, data: { message: '上传容量或类型受限，请稍后重试' } } });
+    const attachments = ref([]),
+      files = ref([]);
+    const upload = helper(attachments, files);
+    const options = uploadOptions();
+    await upload.customUpload(options);
+    expect(fixtures.error).toHaveBeenCalledWith('上传容量或类型受限，请稍后重试');
+    expect(options.onError).toHaveBeenCalledOnce();
+    expect(options.onFinish).not.toHaveBeenCalled();
+    expect(attachments.value).toEqual([]);
+    expect(files.value).toEqual([]);
+    expect(upload.isReadyToSubmit.value).toBe(true);
+    expect(upload.isUploading.value).toBe(false);
+    fixtures.upload.mockResolvedValue({
+      data: { url: '/api/upload/7/1720000000000_中文.pdf', filename: '1720000000000_中文.pdf' },
+    });
+    await upload.customUpload(options);
+    expect(options.onFinish).toHaveBeenCalledOnce();
+  });
+  it.each([
+    { status: 500, message: 'internal detail' },
+    { status: 400, message: 'x'.repeat(161) },
+    { status: 400, message: {} },
+  ])('uses generic feedback for untrusted server detail (%#)', async ({ status, message }) => {
+    fixtures.upload.mockRejectedValue({ response: { status, data: { message } } });
+    await helper(ref([]), ref([])).customUpload(uploadOptions());
+    expect(fixtures.error).toHaveBeenCalledWith('附件上传失败');
+  });
+});
+
 describe('client upload filename identity', () => {
   it.each(['中文论文.pdf', '100%.pdf', '%E4%B8%AD.pdf', '世界🧱.pdf'])(
     'uploads %s unchanged and lists the actual server filename',

@@ -9,5 +9,7 @@
 **/dist
 lomserver/public
 mysql_data
+.ops-secrets
+backups
 docs
 *.log

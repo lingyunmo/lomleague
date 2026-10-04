@@ -33,6 +33,7 @@ import likeRoutes from './routes/likeRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import { getServerStatus } from './services/serverStatusService.js';
 import packageInfo from './package.json' with { type: 'json' };
+import prisma from './dao/prismaClient.js';
 
 const app = express();
 
@@ -204,7 +205,23 @@ export function startServer(port = config.port || 3000) {
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  startServer();
+  const server = startServer();
+  let stopping = false;
+  const shutdown = () => {
+    if (stopping) return;
+    stopping = true;
+    server.close(async () => {
+      await prisma.$disconnect();
+      process.exit(0);
+    });
+    server.closeIdleConnections();
+    setTimeout(() => {
+      server.closeAllConnections();
+      process.exit(1);
+    }, 10000).unref();
+  };
+  process.once('SIGTERM', shutdown);
+  process.once('SIGINT', shutdown);
 }
 
 export default app;

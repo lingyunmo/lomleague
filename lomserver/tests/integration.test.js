@@ -78,6 +78,31 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     const list = await request(`/forum/posts?keyword=${encodeURIComponent(title)}`);
     expect(list.data.posts.some((item) => item.id === post.id)).toBe(true);
   });
+  it('saves a genuine uploaded Unicode avatar URL without truncating or decoding it', async () => {
+    const name = `${'界'.repeat(40)}100% %E4%B8%AD.png`;
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/lS8AAAAASUVORK5CYII=',
+      'base64',
+    );
+    const form = new FormData();
+    form.append('file', new Blob([png], { type: 'image/png' }), name);
+    const response = await fetch(`${baseUrl}/api/file/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${alice.token}` },
+      body: form,
+    });
+    expect(response.status).toBe(200);
+    const stored = await response.json();
+    expect(stored.filename.replace(/^\d+_/, '')).toBe(name);
+    expect(stored.url.length).toBeGreaterThan(191);
+    expect(
+      (await request('/user/update', { method: 'PUT', token: alice.token, body: { avatar: stored.url } })).status,
+    ).toBe(200);
+    expect((await request('/user/me', { token: alice.token })).data.avatar).toBe(stored.url);
+    expect((await prisma.user.findUnique({ where: { id: alice.id } })).avatar).toBe(stored.url);
+    const download = await fetch(`${baseUrl}${stored.url}`);
+    expect(Buffer.from(await download.arrayBuffer())).toEqual(png);
+  });
   it('does not let another member edit an owned post', async () => {
     expect(
       (await request(`/forum/posts/${post.id}`, { method: 'PUT', token: bob.token, body: { title: 'unauthorized' } }))

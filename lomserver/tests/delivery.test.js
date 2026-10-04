@@ -22,4 +22,17 @@ describe('non-destructive delivery invariants', () => {
     expect(workspace).toContain('verifyDepsBeforeRun: error');
     expect(workspace).not.toContain('onlyBuiltDependencies');
   });
+  it('uses separately provisioned database credentials and serializes lom maintenance', () => {
+    const compose = readFileSync(`${root}docker-compose.prod.yml`, 'utf8');
+    const workflow = readFileSync(`${root}.github/workflows/deploy.yml`, 'utf8');
+    expect(compose).toContain('.ops-secrets/runtime.env');
+    expect(compose).not.toContain('mysql://root:');
+    expect(workflow).toContain('flock -w 120 9');
+    expect(workflow).toContain('source: docker-compose.prod.yml,ops');
+    expect(workflow).toContain('target: /root/minecraft/lomleague/.deploy-${{ github.run_id }}');
+    expect(workflow.indexOf('cp "$staging_directory/docker-compose.prod.yml"')).toBeGreaterThan(
+      workflow.indexOf('flock -w 120 9'),
+    );
+    expect(workflow).toContain('docker stop --time 12 lom-ci-smoke');
+  });
 });

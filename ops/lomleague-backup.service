@@ -1,0 +1,10 @@
+[Unit]
+Description=lomleague encrypted database and upload backup with isolated restore verification
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/bash /root/minecraft/lomleague/ops/backup.sh
+TimeoutStartSec=600

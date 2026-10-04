@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.20 — 2026-10-05
+
+- Add authenticated encrypted database/upload/config checkpoints, shared maintenance locking, daily backup units and resource-limited isolated restoration that checks database contents and every existing upload URL/byte. Private backup keys remain off-server.
+- Harden new uploads with private staging, bounded signature workers, extension/MIME checks, quotas, rate/concurrency/free-space limits and atomic no-overwrite publication. Preserve timestamp-prefixed canonical Unicode/literal-percent filenames and existing files; no name mapping or extra transcoding.
+- Restrict the application's database account to CRUD on lom, keep administrative credentials outside Git/images, validate raw attachment/avatar URL bounds and widen only the avatar column to varchar(2048). Preserve business rows, UTF-8/collations, deletion rules and all historical migration records. No large migration or automatic production schema push.
+- Add recovery, permission, hostile-upload and feedback regressions; gracefully drain the application on SIGTERM so consistent backups can restart it promptly. See docs/MAINTENANCE.md for operational limits and safe restoration.
+
 ## 2.0.19 — 2026-10-04
 
 - Scope personal profile loading and editor operations to the active route, login and component, including logout/return. Clear private drafts when the context changes and show a retryable read error instead of editable empty fields.
