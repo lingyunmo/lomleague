@@ -98,7 +98,7 @@ jobs:
         run: |
           set -e
           # ONLY the empty disposable CI database; never any production connection.
-          docker run --rm --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test ${{ env.IMAGE }}:${{ github.sha }} pnpm exec prisma db push --skip-generate
+          docker run --rm --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test ${{ env.IMAGE }}:${{ github.sha }} node node_modules/prisma/build/index.js db push --skip-generate
           trap 'docker rm -f lom-ci-smoke >/dev/null 2>&1 || true' EXIT
           docker run -d --name lom-ci-smoke --network "$CI_NETWORK" -e DATABASE_URL=mysql://root:testpass123@mysql:3306/lom_ci_test -e JWT_SECRET=ci-smoke-only -e JWT_EXPIRATION=3600 ${{ env.IMAGE }}:${{ github.sha }}
           for attempt in $(seq 1 15); do

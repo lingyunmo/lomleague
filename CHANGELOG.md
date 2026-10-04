@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.4 — 2026-10-04
+
+- Remove obsolete nested frontend/backend lockfiles and workspace configurations. The root workspace now owns installation in every directory; the removed files remain recoverable in Git history.
+- Copy complete workspace metadata and package links into the runtime image. Invoke the installed Prisma CLI directly for disposable CI schema setup, so container checks never trigger an implicit package-manager install.
+- Version 2.0.3's isolated-image gate caught the nested workspace reinstall failure before registry publishing or server deployment; the running production app was not touched.
+
 ## 2.0.3 — 2026-10-04
 
 - Preserve login through 403 permission errors and transient network/server failures. Clear only the authenticated token rejected with 401; stale requests cannot invalidate newer sessions.

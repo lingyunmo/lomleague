@@ -15,8 +15,10 @@ FROM node:24-alpine AS runtime
 RUN apk add --no-cache openssl
 RUN npm install --global pnpm@11.1.3
 WORKDIR /app
-COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml /app/pnpm-lock.yaml /app/.npmrc ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/lom/package.json ./lom/package.json
+COPY --from=builder /app/lom/node_modules ./lom/node_modules
 COPY --from=builder /app/lomserver ./lomserver
 COPY --from=builder /app/lom/dist ./lomserver/public
 WORKDIR /app/lomserver

@@ -9,7 +9,7 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.3 (not yet released)
+## Working batch: 2.0.4 (not yet released)
 
 - New responsive homepage, code-native isometric block world, searchable film/project/member archive, preserved historical records, check-in, and real cached Minecraft status.
 - Vite 8, Vue and compatible dependency updates, Vitest 5, ESLint 10, Multer 2.4.
@@ -21,16 +21,17 @@
 ## Checks so far
 
 - `pnpm build` passed repeatedly. `pnpm lint` has zero errors (13 existing warnings).
-- `pnpm test` with `LOM_TEST_DATABASE_URL`: 98 passing tests (65 backend, 33 frontend), including real local HTTP multipart → filesystem → URL fixtures, status caching/failures, app health/API contracts, case-sensitive Git/filesystem imports, read-only smoke contracts, archive search, Markdown sanitization, no remote editor asset injection, login-expiry/error/race regressions, and real MySQL registration/login/forum/permission/reply/like/notification/check-in integration.
+- `pnpm test` with `LOM_TEST_DATABASE_URL`: 100 passing tests (67 backend, 33 frontend), including real local HTTP multipart → filesystem → URL fixtures, status caching/failures, app health/API contracts, case-sensitive Git/filesystem imports, delivery invariants, read-only smoke contracts, archive search, Markdown sanitization, no remote editor asset injection, login-expiry/error/race regressions, and real MySQL registration/login/forum/permission/reply/like/notification/check-in integration.
 - `pnpm audit --prod`: no known vulnerabilities. Prisma's vulnerable deepmerge-ts dependency is overridden to 8.x and Prisma generation has passed with that override.
 - Browser: desktop page renders, search “Lanthanum” returns the exact project, 390px layout has no horizontal overflow, mobile menu expands.
 - A separate MySQL 8.0.46 process runs on 127.0.0.1:13306 from a newly initialized temporary directory, never the existing MySQL80 service's data directory. The database is `lom_local_test`, containing only synthetic fixture data. Its schema synchronization was explicitly scoped to that empty local database. CI uses its own disposable `lom_ci_test` service; no schema synchronization is run against production.
 - The browser production-build preview loads the real test forum post and correctly renders Chinese, Markdown, emoji and literal percent text. Synthetic-account login, reactive navigation, check-in state, editor source/preview compatibility, and light/dark homepage rendering passed. The editor's default CDN scripts were caught in browser QA and removed; all editor extension assets are local.
-- Docker Desktop daemon was unavailable; `docker desktop start` and `docker info` did not finish, and these two command sessions were stopped. Do not claim the container build has passed until actually tested.
+- The local Docker Desktop daemon remains unavailable; local container execution is unverified. Actual Linux Docker builds passed in CI for 2.0.2 and 2.0.3; the latter exposed a runtime workspace problem before publishing.
 - Commit b784fdf (2.0.0) was signed with the existing local identity, pushed, and confirmed `verified: true` / `valid` by GitHub. Run 37168510408 rejected a Windows/Git case mismatch (`ArticleRoutes.js` in Git vs `articleRoutes.js` on disk), and deployment was skipped. The fix records a real case-only Git rename and makes the local import tests consult Git's canonical filenames as well as the filesystem.
 - Commit 5f2dc5a (2.0.1) also has a valid GitHub signature. Run 37168651373 passed the import checks but exposed missing `JWT_EXPIRATION` in the disposable CI login fixture. The fixture now explicitly stubs 3600 seconds and asserts the token lifetime, so tests no longer accidentally depend on the local ignored `.env`. Deployment was skipped; production is still unchanged.
 - Commit 77c8282 (2.0.2) is also GitHub-verified. Run 37168930554 passed all Linux checks and the Docker build but the production container restarted; the health gate rolled back to the previous image. The old public health endpoint returned 200 again. The exact startup error was not captured. The next batch adds a candidate-container preflight before replacement and removes automatic schema migration from app startup. Existing migration SQL is present in Git and has not been changed; the earlier filesystem-only inventory did not reveal it.
 - Local next-batch auth fixes cover invalid JWTs, 403/network-error session preservation, same-token 401 expiry, stale requests, deduplicated profile loading and logout cache cleanup. They are not deployed yet.
+- Commit 84ecee0 (2.0.3) is GitHub-verified. Run 37169585543 passed Linux tests and image building, then the new isolated-container gate exposed implicit pnpm installation from the obsolete nested backend workspace/lockfile. Publishing and server deployment were skipped, leaving the old app untouched. The four nested lockfile/workspace files and duplicate backend .npmrc are now removed (recoverable in Git), runtime workspace metadata/package links are complete, and the disposable CI schema setup invokes the installed Prisma CLI directly. Build-script approvals use pnpm 11's version-specific allowBuilds; stale dependencies now fail explicitly instead of triggering automatic installation.
 
 ## Current processes
 

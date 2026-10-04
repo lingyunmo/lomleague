@@ -6,13 +6,11 @@ overrides:
   'deepmerge-ts@<8.0.0': '^8.0.0'
 
 allowBuilds:
+  '@prisma/client@6.19.3': true
+  '@prisma/engines@6.19.3': true
+  'prisma@6.19.3': true
+  'esbuild@0.27.7': true
   core-js: false
 
-pnpm:
-  onlyBuiltDependencies:
-    - '@prisma/client'
-    - '@prisma/engines'
-    - esbuild
-    - prisma
-    - bcrypt
-    - core-js
+# A stale installation must fail explicitly, never install dependencies at runtime.
+verifyDepsBeforeRun: error

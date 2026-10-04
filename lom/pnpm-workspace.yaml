@@ -1,4 +1,0 @@
-pnpm:
-  onlyBuiltDependencies:
-    - esbuild
-    - core-js
