@@ -28,6 +28,7 @@ const routes = [
   { path: '/about', name: 'About', component: () => import('@/components/about/OurHistory.vue') },
   { path: '/invite', name: 'Invite', component: () => import('@/components/InviteGenerator.vue') },
   { path: '/tools/coordinates', name: 'CoordinateTools', component: () => import('@/views/CoordinateTools.vue') },
+  { path: '/tools/materials', name: 'MaterialsTools', component: () => import('@/views/MaterialsTools.vue') },
   {
     path: '/admin',
     name: 'Admin',

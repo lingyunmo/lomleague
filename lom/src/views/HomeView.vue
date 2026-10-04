@@ -57,6 +57,7 @@
           <router-link to="/tools/coordinates" class="card-bottom-link"
             >主世界 / 下界坐标工具 <span>↗</span></router-link
           >
+          <router-link to="/tools/materials" class="card-bottom-link">建造用料 / 储存换算 <span>↗</span></router-link>
         </article>
         <article class="workspace-card community-card">
           <div class="card-top">
@@ -528,6 +529,9 @@ h1 span {
   font-size: 12px;
 }
 .card-bottom-link {
+  min-height: 44px;
+  align-items: center;
+  box-sizing: border-box;
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid var(--portal-line);
@@ -536,6 +540,9 @@ h1 span {
   color: var(--color-text-primary);
   text-decoration: none;
   font-size: 12px;
+}
+.card-bottom-link + .card-bottom-link {
+  margin-top: 12px;
 }
 .member-marks {
   display: flex;

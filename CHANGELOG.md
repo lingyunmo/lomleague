@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.17 — 2026-10-04
+
+- Add a local-only building-material planner with exact per-row full stacks, remainder and storage-slot counts. Explicit stack sizes and user-selected container capacity avoid guessing item or server rules; rows are not silently merged and zero amounts do not invent a final container.
+- Link the public tool from the homepage and coordinate utility. Use a responsive, theme-aware layout, native labeled controls, bounded input and an accessible storage diagram. Invalid input clears old results; Unicode and literal percent text remain unchanged.
+- Provide precise clipboard text, a readonly manual-copy fallback and overlap/edit/unmount guards. Inputs are neither saved nor uploaded. Homepage bottom links receive 44px targets.
+- Add 44 calculation/component tests and complete full local test/build/lint/audit/read-only smoke and desktop/mobile/keyboard/clipboard acceptance. No new dependencies, database, uploaded file, filename or timestamp changes.
+
 ## 2.0.16 — 2026-10-04
 
 - Prevent overlapping post creation and stale post/article/reply submission or feedback after cancellation, unmounting or login changes. Preserve existing validation and capture attachment arrays; requests already sent are not represented as undone.

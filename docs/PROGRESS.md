@@ -9,7 +9,21 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.16 (uncommitted; not released)
+## Working batch: 2.0.17 (uncommitted; not released)
+
+- Add a browser-only Minecraft building-material planner: independent material rows, explicit 1/16/64 stack sizes, exact stack/remainder/slot totals and user-selected container capacity. It neither identifies in-game items nor connects to a game server, stores drafts or changes the database.
+- Primary references: Microsoft ContainerSlot.maxAmount documents different item stack limits (64 and 16 examples), and Mojang's Block of the Week: Shulker Box documents 27 stacks and no shulker nesting. Do not rely on community feedback posts as authoritative game rules. Describe arbitrary container capacities as user-selected assumptions, not inferred server settings.
+- Add 44 calculation/component regressions: mixed and independent partial stacks, exact fills, zero amounts, safe large totals, bounded rows/names/capacity, literal Unicode/percent names, real router links, invalid-result clearing and clipboard overlap/edit/unmount guards. Targeted tools checks passed 51 tests; the complete local run in session 4068 passed 529 tests (121 backend, 408 frontend).
+- Zero-warning lint, production build, production dependency audit and the actual read-only smoke at local-preview-v2.0.17 passed. Only the owned version-16 backend session 10403 was stopped after confirming process/port/revision; version-17 preview is session 39149, still using only lom_local_test on port 13306. No dependency resolution or schema changes. The existing lazy invitation/PDF chunk warning remains visible.
+- Built-page acceptance passed keyboard navigation from the homepage, reciprocal coordinate-tool navigation, exact mixed-stack results, actual clipboard text with Chinese/emoji/literal percent sequences, invalid-input result removal and per-field error state, and fresh default inputs after reload. At 390px, document width equals scroll width and all tool buttons/inputs are at least 44px. Light/dark error and copy-button contrast exceed 4.5:1; original dark/blue/glass preferences and all temporary viewport/network overrides were restored.
+- Browser observation during calculation/copy/theme checks recorded only existing notification GET polling: no material-input request or business write. Homepage bottom links now have 44px targets. Screenshots: lomleague-2.0.17-materials-mobile-top.jpg and lomleague-2.0.17-materials-mobile-result.jpg in the task output directory. Full-page capture timed out; the saved viewport proofs were inspected instead.
+- Local acceptance is complete; signed commit, batch push, GitHub Verified/Actions and actual live version/tool checks remain pending. Do not describe this batch as released yet.
+
+## Previous release batches
+
+### 2.0.16
+
+- Version 2.0.16 is released: GitHub-verified commit 59337aabef849826da8cff093a0165447a94773d, successful Actions run 37197049882 and matching live health/footer. Actual Verified badge and online homepage were checked. Screenshot: lomleague-2.0.16-homepage-live.jpg in the task output directory.
 
 - Three creation-form regressions failed against 2.0.15: two actual Naive UI button clicks dispatched two post creations, an unmounted form emitted late success, and a previous member's region populated the current form. Suppress overlapping submits and scope region/submission results to the current component and session, including token-change-and-return cases.
 - Capture the existing payload without changing title/content/region or attachment URL semantics. Closing a post form unmounts it; changing login closes it immediately. Cancellation invalidates late feedback but does not claim to undo requests already sent. Existing backend creation and permission rules are unchanged.
@@ -19,9 +33,7 @@
 - Fifty-eight new frontend regressions passed. Full local checks completed successfully in session 9469: 485 tests (121 backend, 364 frontend), zero-warning lint and a production build; session 49499's earlier 483-test run also passed, and session 55384's initial post-form batch had 436 tests. Production dependency audit is clean. Actual read-only smoke passed at local-preview-v2.0.16. The existing route-lazy invitation/PDF chunk warning is retained.
 - Built-page acceptance passed post and announcement draft cancellation/fresh reopening, same-member region refresh without unexpected closure, actual history navigation/unmounting, 390px post-form layout (358px dialog, no horizontal overflow), admin-entry removal after logout and list-confirmation destruction on history navigation. A newly registered local-only admin fixture (id 92, username local_admin_16_1791111078440, password local-test-password) was granted admin only in lom_local_test; no existing member was changed. The original synthetic Alice login/preferences were restored. Browser observation recorded no content creation/deletion/upload request. All temporary network/viewport overrides were cleared. Screenshot: lomleague-2.0.16-post-form-mobile-final.jpg; the earlier reopened capture shows a transition/background and is not a deliverable.
 - Browser file-chooser upload is concretely limited by Chrome extension file-URL access being disabled. Do not change that permission autonomously or work around the upload API. Actual NUpload finish/remove tests and real multipart/disk/read byte-and-name integration passed, but direct browser file selection was not completed and sent no upload. Manual browser upload acceptance requires the user to enable “Allow access to file URLs” under the ChatGPT extension details at chrome://extensions, if desired.
-- Manifests and local frontend/backend are 2.0.16. This cohesive creation/upload/list-confirmation batch is ready for final diff/signing and batched release checks, subject to the explicitly recorded browser-file-selection limitation. Do not claim release until Actions, actual Verified badge and live revision/footer are checked.
-
-## Previous release batches
+- All required ordinary release gates passed; the concrete browser-file-selection limitation remains recorded above. Release confirmation is recorded above, not inferred from a build or push alone.
 
 ### 2.0.15
 
@@ -131,8 +143,8 @@
 
 ## Next
 
-1. Inspect the final creation/upload/list-confirmation diff and make a signed batch commit/push; observe deploy.yml, actual Verified badge and live revision/UI. All normal local gates passed; retain the explicit Chrome file-selection limitation instead of claiming that check passed.
-2. Next batch candidates: mobile Markdown editing ergonomics, remaining profile/registration validation races and accessible detail-page layouts. Preserve existing rules and uploaded names; add baseline regressions and fully verify before another release.
+1. Finish version 17's local-only material planner, preserving exact mixed-stack calculations, independent rows and explicit assumptions. Add accessible responsive controls, guarded clipboard feedback and real homepage/tool navigation; verify limits, zero/exact/partial fills and stale copying.
+2. Later candidates: mobile Markdown editing ergonomics, remaining profile/registration validation races and accessible detail-page layouts. Preserve existing rules and uploaded names; add baseline regressions and fully verify before another release.
 3. Keep testing against the named isolated database and verify process ownership before any preview restart. Do not remove already stored uploads or claim to cancel server operations already sent.
 4. Local Docker Desktop remains unavailable; actual isolated container/database gates passed in release CI. Do not accept terms or change host security to work around this. Later batches may improve the existing invitation/PDF lazy chunk, backup-first database baselining and tested framework major migrations.
 

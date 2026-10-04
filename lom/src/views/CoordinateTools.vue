@@ -3,6 +3,7 @@
     <div class="tools-inner">
       <nav class="tools-nav" aria-label="工具导航">
         <RouterLink to="/">← 联盟首页</RouterLink>
+        <RouterLink to="/tools/materials">建造用料换算 ↗</RouterLink>
         <RouterLink to="/forums">去社区分享建造 ↗</RouterLink>
       </nav>
       <header class="tools-heading">
