@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApiClient } from './client.js';
+import { invalidateSessionRequests } from './session.js';
 const jwt = (label = 'current') =>
   `e30.${Buffer.from(JSON.stringify({ label, exp: Math.floor(Date.now() / 1000) + 3600 })).toString('base64url')}.signature`;
 function rejectStatus(status, beforeReject = () => {}) {
@@ -84,6 +85,23 @@ describe('authentication-aware API errors', () => {
       client.get('/user/me', { adapter: rejectStatus(401, () => localStorage.setItem('token', newer)) }),
     ).rejects.toBeDefined();
     expect(localStorage.getItem('token')).toBe(newer);
+    expect(notify).not.toHaveBeenCalled();
+  });
+  it('does not let a previous-session 401 expire a returned identical token', async () => {
+    const token = jwt();
+    localStorage.setItem('token', token);
+    const notify = vi.fn(),
+      client = createApiClient({ onSessionExpired: notify });
+    await expect(
+      client.get('/user/me', {
+        adapter: rejectStatus(401, () => {
+          invalidateSessionRequests(localStorage);
+          localStorage.removeItem('token');
+          localStorage.setItem('token', token);
+        }),
+      }),
+    ).rejects.toBeDefined();
+    expect(localStorage.getItem('token')).toBe(token);
     expect(notify).not.toHaveBeenCalled();
   });
   it('does not attach a token to failed login attempts', async () => {

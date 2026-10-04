@@ -10,6 +10,41 @@ class UserDao {
     return prisma.user.findUnique({ where: { id: userId } });
   }
 
+  static async getRecentActivity(userId) {
+    const [posts, replies] = await Promise.all([
+      prisma.forumPost.findMany({
+        where: { userId },
+        select: { id: true, title: true, updatedAt: true },
+        orderBy: [{ updatedAt: 'desc' }, { id: 'desc' }],
+        take: 5,
+      }),
+      prisma.forumReply.findMany({
+        where: { userId },
+        select: { id: true, postId: true, content: true, createdAt: true },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        take: 5,
+      }),
+    ]);
+    return [
+      ...posts.map((post) => ({
+        key: `p${post.id}`,
+        type: 'post',
+        postId: post.id,
+        text: post.title,
+        occurredAt: post.updatedAt,
+      })),
+      ...replies.map((reply) => ({
+        key: `r${reply.id}`,
+        type: 'reply',
+        postId: reply.postId,
+        text: Array.from(reply.content).slice(0, 40).join(''),
+        occurredAt: reply.createdAt,
+      })),
+    ]
+      .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime() || a.key.localeCompare(b.key))
+      .slice(0, 5);
+  }
+
   static async registerUser(username, password, email, avatar = null) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = await prisma.user.create({

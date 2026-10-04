@@ -61,6 +61,7 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     expect(result.status).toBe(200);
     expect(result.data.username).toBe(alice.username);
     expect(result.data).not.toHaveProperty('password');
+    expect(result.cacheControl).toBe('no-store');
   });
   it('retains Chinese, emoji and literal percent sequences in persisted posts', async () => {
     const title = '中文世界🧱 100% %E4%B8%AD';
@@ -102,6 +103,38 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     const notifications = await request('/notifications/', { token: alice.token });
     expect(notifications.status).toBe(200);
     expect(notifications.data.unreadCount).toBeGreaterThan(0);
+  });
+  it("reads only the current member's actual activity, not all posts or replies for a user-id-shaped post", async () => {
+    const otherPost = await request('/forum/posts', {
+      method: 'POST',
+      token: bob.token,
+      body: { title: "Other member's post", content: 'local-only fixture' },
+    });
+    const ownReply = await request('/forum/replies', {
+      method: 'POST',
+      token: alice.token,
+      body: { postId: otherPost.data.id, content: '自己的中文回复🧱100% %E4%B8%AD' },
+    });
+    const result = await request(`/user/activity?userId=${bob.id}`, { token: alice.token });
+    expect(result.status).toBe(200);
+    expect(result.cacheControl).toBe('no-store');
+    expect(result.data.activities).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: `p${post.id}`, type: 'post', postId: post.id, text: post.title }),
+        expect.objectContaining({
+          key: `r${ownReply.data.id}`,
+          type: 'reply',
+          postId: otherPost.data.id,
+          text: '自己的中文回复🧱100% %E4%B8%AD',
+        }),
+      ]),
+    );
+    expect(result.data.activities.some((item) => item.type === 'post' && item.postId === otherPost.data.id)).toBe(
+      false,
+    );
+    expect((await request('/user/activity')).status).toBe(401);
+    const empty = await member('local_empty_activity');
+    expect((await request('/user/activity', { token: empty.token })).data.activities).toEqual([]);
   });
   it('isolates member notifications and mark-read operations without retaining HTTP responses', async () => {
     const initial = await request('/notifications/', { token: alice.token });

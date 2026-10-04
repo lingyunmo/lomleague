@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.18 — 2026-10-04
+
+- Repair the personal profile's activity source with bounded, authenticated-member-only reads and actual chronological ordering; preserve Unicode reply previews. Profile and activity responses are no-store, without schema or data changes.
+- Guard profile/achievement reads across login transitions and logout/return, share overlapping achievement requests and expose retryable errors without false zero/empty results. Keep asynchronously refreshed profile achievements/statistics reactive and use real edit/activity links.
+- Synchronize persisted credentials before synchronous login watchers run. Use in-memory request-generation guards so an old 401 cannot expire a returned identical token; no extra credentials, headers or persisted session mapping are introduced.
+- Refresh the profile's theme-aware cards and readable locked achievements. Native edit/activity/retry links and buttons have visible focus and at least 44px targets; frame animations respect reduced-motion preferences. Existing achievement/frame thresholds are unchanged.
+- Add 25 frontend/backend tests and pass full local tests, zero-warning lint, production build/audit/read-only smoke and actual member-switch, read-error/retry, keyboard and 390px layout acceptance. No schema, stored upload, filename or timestamp changes.
+
 ## 2.0.17 — 2026-10-04
 
 - Add a local-only building-material planner with exact per-row full stacks, remainder and storage-slot counts. Explicit stack sizes and user-selected container capacity avoid guessing item or server rules; rows are not silently merged and zero amounts do not invent a final container.

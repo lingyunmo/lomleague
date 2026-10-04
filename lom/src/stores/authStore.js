@@ -2,8 +2,10 @@ import { defineStore } from 'pinia';
 import { userApi } from '../api/user.js';
 import client from '../api/client.js';
 import { isTokenExpired } from '../api/utils.js';
+import { invalidateSessionRequests } from '../api/session.js';
 
 const pendingProfiles = new WeakMap();
+const pendingAchievements = new WeakMap();
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
@@ -29,6 +31,9 @@ export const useAuthStore = defineStore('auth', {
       achList: [],
       achFrame: 'none',
       achStats: {},
+      achLoading: false,
+      achError: null,
+      achReady: false,
     };
   },
   getters: {
@@ -42,8 +47,8 @@ export const useAuthStore = defineStore('auth', {
     setToken(token) {
       if (!token) return this.logout();
       if (this.token !== token) this.logout();
-      this.token = token;
       localStorage.setItem('token', token);
+      this.token = token;
     },
     setUser(user) {
       this.user = user
@@ -58,43 +63,70 @@ export const useAuthStore = defineStore('auth', {
       if (existing?.token === token) return existing.promise;
       this.userLoading = true;
       this.userError = null;
+      const operation = { token, promise: null };
+      pendingProfiles.set(this, operation);
+      const isCurrent = () => this.token === token && pendingProfiles.get(this) === operation;
       const promise = (async () => {
         try {
-          const response = await Promise.resolve().then(() => userApi.getMe());
-          if (this.token !== token) return null;
+          const response = await userApi.getMe();
+          if (!isCurrent()) return null;
           this.setUser(response.data);
           return this.user;
         } catch (error) {
-          if (this.token === token) {
+          if (isCurrent()) {
             if (error?.response?.status === 401) this.logout();
             else this.userError = '用户信息暂时无法刷新，登录状态已保留。';
           }
           return null;
         } finally {
-          if (pendingProfiles.get(this)?.promise === promise) {
+          if (pendingProfiles.get(this) === operation) {
             this.userLoading = false;
             pendingProfiles.delete(this);
           }
         }
       })();
-      pendingProfiles.set(this, { token, promise });
+      operation.promise = promise;
       return promise;
     },
-    async fetchAchievements() {
+    fetchAchievements() {
       const token = this.token;
       const userId = this.user?.id;
-      if (!token || !userId) return;
-      try {
-        const res = await client.get(`/user/achievements/${userId}`);
-        if (this.token !== token || this.user?.id !== userId) return;
-        this.achList = res.data.achievements || [];
-        this.achFrame = res.data.frame || 'none';
-        this.achStats = res.data.stats || {};
-      } catch {
-        /* ignore */
-      }
+      if (!token || !userId) return Promise.resolve(null);
+      const existing = pendingAchievements.get(this);
+      if (existing?.token === token && existing.userId === userId) return existing.promise;
+      const operation = { token, userId, promise: null };
+      pendingAchievements.set(this, operation);
+      this.achLoading = true;
+      this.achError = null;
+      const isCurrent = () =>
+        this.token === token && this.user?.id === userId && pendingAchievements.get(this) === operation;
+      operation.promise = (async () => {
+        try {
+          const res = await client.get(`/user/achievements/${userId}`);
+          if (!isCurrent()) return null;
+          this.achList = Array.isArray(res.data.achievements) ? res.data.achievements : [];
+          this.achFrame = res.data.frame || 'none';
+          this.achStats = res.data.stats || {};
+          this.achReady = true;
+          return res.data;
+        } catch {
+          if (isCurrent()) this.achError = '成就暂时无法加载，请重试。';
+          return null;
+        } finally {
+          if (pendingAchievements.get(this) === operation) {
+            this.achLoading = false;
+            pendingAchievements.delete(this);
+          }
+        }
+      })();
+      return operation.promise;
     },
     logout() {
+      invalidateSessionRequests(localStorage);
+      pendingProfiles.delete(this);
+      pendingAchievements.delete(this);
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       this.token = null;
       this.user = null;
       this.userLoading = false;
@@ -102,9 +134,9 @@ export const useAuthStore = defineStore('auth', {
       this.achList = [];
       this.achFrame = 'none';
       this.achStats = {};
-      pendingProfiles.delete(this);
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      this.achLoading = false;
+      this.achError = null;
+      this.achReady = false;
     },
   },
 });

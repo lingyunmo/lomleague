@@ -6,15 +6,17 @@
  */
 import axios from 'axios';
 import { isTokenExpired } from './utils.js';
-import { expireSession, SESSION_EXPIRED_EVENT } from './session.js';
+import { expireSession, getSessionGeneration, SESSION_EXPIRED_EVENT } from './session.js';
 
 export function createApiClient({
   storage = localStorage,
   onSessionExpired = () => window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT)),
 } = {}) {
   const instance = axios.create({ baseURL: '/api', timeout: 15000 });
+  const requestSessions = new WeakMap();
   instance.interceptors.request.use(
     (config) => {
+      requestSessions.set(config, getSessionGeneration(storage));
       const token = storage.getItem('token');
       if (token) {
         if (isTokenExpired(token)) {
@@ -34,7 +36,9 @@ export function createApiClient({
       if (error.response?.status === 401) {
         const authorization = error.config?.headers?.Authorization;
         const sentToken = typeof authorization === 'string' ? authorization.replace(/^Bearer /, '') : null;
-        expireSession(storage, sentToken, onSessionExpired);
+        if (requestSessions.get(error.config) === getSessionGeneration(storage)) {
+          expireSession(storage, sentToken, onSessionExpired);
+        }
       }
       // Permission errors and transient network failures do not invalidate a login.
       return Promise.reject(error);
