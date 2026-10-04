@@ -12,8 +12,8 @@
           <path d="M0 14 24 0 48 14 24 28Z" fill="none" stroke="currentColor" stroke-width=".5" />
         </pattern>
         <radialGradient id="world-light">
-          <stop stop-color="#b8ef70" stop-opacity=".18" />
-          <stop offset="1" stop-color="#b8ef70" stop-opacity="0" />
+          <stop stop-color="var(--color-brand-primary)" stop-opacity=".18" />
+          <stop offset="1" stop-color="var(--color-brand-primary)" stop-opacity="0" />
         </radialGradient>
       </defs>
       <ellipse cx="330" cy="310" rx="290" ry="220" fill="url(#world-light)" />
@@ -39,13 +39,19 @@
         <path d="M408 306 430 319 430 345 408 332Z" fill="#9a987f" />
         <path d="M430 319 452 306 452 332 430 345Z" fill="#676f61" />
       </g>
-      <g fill="#c9ed97">
+      <g fill="var(--color-brand-primary)">
         <rect x="120" y="153" width="4" height="4" />
         <rect x="471" y="113" width="5" height="5" />
         <rect x="529" y="255" width="3" height="3" />
       </g>
-      <path d="M478 175h12m-6 -6v12M166 270h8m-4 -4v8" stroke="#b9dd8a" />
-      <path d="M385 128v46l50 29M191 397l-31 18h-56" stroke="#a0c17c" stroke-dasharray="3 5" opacity=".5" fill="none" />
+      <path d="M478 175h12m-6 -6v12M166 270h8m-4 -4v8" stroke="var(--color-brand-secondary)" />
+      <path
+        d="M385 128v46l50 29M191 397l-31 18h-56"
+        stroke="var(--color-brand-primary)"
+        stroke-dasharray="3 5"
+        opacity=".5"
+        fill="none"
+      />
     </svg>
     <span class="world-label"><i /> WORLD / LOM · SINCE 2014</span>
     <span class="world-caption">下一块方块，属于你。</span>
@@ -74,7 +80,7 @@ for (let row = 0; row < 6; row++) {
 .block-world {
   position: relative;
   width: 100%;
-  color: #8ba785;
+  color: var(--color-brand-secondary);
 }
 svg {
   width: 100%;
@@ -98,7 +104,7 @@ svg {
   width: 5px;
   height: 5px;
   margin-right: 7px;
-  background: #b9ea76;
+  background: var(--color-portal-accent);
 }
 .world-caption {
   position: absolute;

@@ -237,8 +237,8 @@ onUnmounted(() => {
 <style>
 .portal {
   --portal-line: color-mix(in srgb, var(--color-text-primary) 13%, transparent);
-  --portal-surface: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-bg-dark));
-  background: var(--color-bg-dark);
+  --portal-surface: var(--glass-bg);
+  background: transparent;
   color: var(--color-text-primary);
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
 }
@@ -316,7 +316,7 @@ onUnmounted(() => {
   display: inline-block;
   width: 7px;
   height: 7px;
-  background: #b8e780;
+  background: var(--color-portal-accent);
   margin-right: 8px;
 }
 h1 {
@@ -355,8 +355,8 @@ h1 span {
   transform: translateY(-2px);
 }
 .primary {
-  background: #b8e780;
-  color: #172216;
+  background: var(--color-portal-accent);
+  color: var(--color-on-accent);
 }
 .secondary {
   border: 1px solid var(--portal-line);
@@ -391,7 +391,7 @@ h1 span {
 }
 .portal-divider i {
   font-size: 20px;
-  color: #b8e780;
+  color: var(--color-portal-accent);
   font-style: normal;
   margin-left: 16px;
 }
@@ -403,9 +403,11 @@ h1 span {
 }
 .workspace-card {
   padding: 24px;
-  border: 1px solid var(--portal-line);
-  border-radius: 8px;
-  background: var(--portal-surface);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-medium);
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -435,20 +437,20 @@ h1 span {
   margin-right: 6px;
 }
 .server-status.online {
-  color: #a4d173;
+  color: var(--color-success);
 }
 .workspace-symbol {
   font:
     38px ui-monospace,
     monospace;
   margin: 25px 0 16px;
-  color: #b7cd98;
+  color: var(--color-portal-accent);
 }
 .community-card .workspace-symbol {
-  color: #d7bc91;
+  color: var(--color-brand-secondary);
 }
 .member-card .workspace-symbol {
-  color: #a9c6d1;
+  color: var(--color-portal-accent);
 }
 .workspace-card h3 {
   font-size: 20px;
@@ -601,7 +603,9 @@ h1 span {
   justify-content: space-between;
   gap: 12px;
   border: 1px solid var(--portal-line);
-  border-radius: 5px;
+  border-radius: var(--glass-radius-sm);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
   padding: 18px;
   font-size: 13px;
 }

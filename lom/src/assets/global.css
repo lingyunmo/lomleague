@@ -18,7 +18,7 @@ html {
 }
 body {
   margin: 0;
-  background: var(--color-bg-dark, #11140f);
+  background: linear-gradient(135deg, var(--color-bg-gradient-start, #000), var(--color-bg-gradient-end, #0a0a0a));
   color: var(--color-text-primary, #edf0e9);
 }
 button,

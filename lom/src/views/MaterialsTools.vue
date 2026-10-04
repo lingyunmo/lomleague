@@ -240,15 +240,13 @@ async function copyPlan() {
 .materials-tools {
   --tools-line: color-mix(in srgb, var(--color-text-primary) 13%, transparent);
   --materials-error: #ffaaa0;
-  --materials-button-text: #172111;
   color: var(--color-text-primary);
-  background: var(--color-bg-dark);
+  background: transparent;
   padding: 34px 36px 64px;
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
 }
 .materials-tools.is-light {
   --materials-error: #9e2f2f;
-  --materials-button-text: #fff;
 }
 .tools-inner {
   max-width: 1168px;
@@ -310,9 +308,11 @@ h1 span {
 .packing-card {
   min-width: 0;
   padding: 30px;
-  border: 1px solid var(--tools-line);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-bg-dark));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-medium);
 }
 .card-heading {
   display: flex;
@@ -424,7 +424,7 @@ button:disabled {
   margin-top: 24px;
   background: var(--color-portal-accent);
   border-color: var(--color-portal-accent);
-  color: var(--materials-button-text);
+  color: var(--color-on-accent);
   font-weight: 700;
 }
 .line-summary {

@@ -165,7 +165,7 @@ async function copyPosition() {
 .coordinate-tools {
   --tools-line: color-mix(in srgb, var(--color-text-primary) 13%, transparent);
   color: var(--color-text-primary);
-  background: var(--color-bg-dark);
+  background: transparent;
   padding: 34px 36px 64px;
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
 }
@@ -223,9 +223,11 @@ h1 span {
 .chunk-card {
   min-width: 0;
   padding: 30px;
-  border: 1px solid var(--tools-line);
-  border-radius: 4px;
-  background: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-bg-dark));
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-medium);
 }
 h2 {
   font-size: 22px;
@@ -341,7 +343,7 @@ button {
   min-height: 46px;
   padding: 14px 18px;
   background: var(--color-portal-accent);
-  color: var(--color-bg-dark);
+  color: var(--color-on-accent);
   font-size: 13px;
   font-weight: 600;
 }

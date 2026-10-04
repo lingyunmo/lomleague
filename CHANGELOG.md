@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.21 — 2026-10-05
+
+- Restore the existing six-color palette and global glass controls across the modern homepage, archive cards, profile and coordinate/material tools. Remove fixed portal greens and opaque card overrides; keep saved theme/mode/glass keys and original neutral dark backgrounds.
+- Keep primary/secondary palette values unchanged and derive readable page accents/button foregrounds for each mode. Connect ambient illustration accents to the palette while preserving Minecraft grass/water/material colors and achievement semantics.
+- Add real, non-mocked appearance-control regressions, all-palette mode/persistence/contrast checks and card-style consumer guards. Verification runs in the background with no computer-use/browser-window control; no business/database/upload changes.
+
 ## 2.0.20 — 2026-10-05
 
 - Add authenticated encrypted database/upload/config checkpoints, shared maintenance locking, daily backup units and resource-limited isolated restoration that checks database contents and every existing upload URL/byte. Private backup keys remain off-server.

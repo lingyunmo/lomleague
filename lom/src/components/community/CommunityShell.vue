@@ -37,8 +37,8 @@ defineProps({
 <style scoped>
 .community-shell {
   --community-line: color-mix(in srgb, var(--color-text-primary) 13%, transparent);
-  --community-surface: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-bg-dark));
-  background: var(--color-bg-dark);
+  --community-surface: var(--glass-bg-inner);
+  background: transparent;
   color: var(--color-text-primary);
   padding: 34px 36px 64px;
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;

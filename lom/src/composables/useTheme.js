@@ -3,6 +3,7 @@
  * 每个预设 = 一整套配色方案：品牌色 + 辅色 + 背景色 + 渐变
  */
 import { ref, reactive } from 'vue';
+import { readableAccent, accentText } from '../utils/themeColors.js';
 
 // ---- 6 套完整配色 ----
 export const PRESETS = {
@@ -16,9 +17,9 @@ export const PRESETS = {
 
 // ---- 暗色 ----
 const DARK = {
-  bodyBg: '#11140f',
-  navbarBg: 'rgba(17,20,15,.9)',
-  footerBg: '#11140f',
+  bodyBg: '#000000',
+  navbarBg: 'rgba(0,0,0,.84)',
+  footerBg: '#0d0d0d',
   textPrimary: 'rgba(255,255,255,.92)',
   textSecondary: 'rgba(255,255,255,.72)',
   textMuted: 'rgba(255,255,255,.56)',
@@ -61,7 +62,10 @@ function applyAll() {
   const mode = darkMode.value ? DARK : LIGHT;
   const glass = glassEnabled.value;
   const root = document.documentElement;
-  root.style.setProperty('--color-portal-accent', darkMode.value ? '#b8e780' : '#426924');
+  const accent = readableAccent(t.primary, darkMode.value ? '#0a0a0a' : '#ececf0');
+  root.style.setProperty('--color-portal-accent', accent);
+  root.style.setProperty('--color-on-accent', accentText(accent));
+  root.style.setProperty('--color-success', darkMode.value ? '#8cdf82' : '#287a36');
 
   // 品牌色
   root.style.setProperty('--color-brand-primary', t.primary);
@@ -127,6 +131,7 @@ function applyAll() {
 }
 
 function setTheme(key) {
+  if (!Object.hasOwn(PRESETS, key)) return;
   currentKey.value = key;
   localStorage.setItem('lom-theme', key);
   applyAll();
@@ -149,7 +154,7 @@ function init() {
   if (initialized) return;
   initialized = true;
   const saved = localStorage.getItem('lom-theme');
-  if (saved && PRESETS[saved]) currentKey.value = saved;
+  if (saved && Object.hasOwn(PRESETS, saved)) currentKey.value = saved;
   const dark = localStorage.getItem('lom-dark');
   if (dark !== null) darkMode.value = dark === '1';
   const glass = localStorage.getItem('lom-glass');

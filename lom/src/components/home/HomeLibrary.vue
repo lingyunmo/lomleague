@@ -231,12 +231,14 @@ input {
 }
 .archive-art {
   aspect-ratio: 1.85;
-  background: #232b24;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
   position: relative;
   padding: 20px;
   overflow: hidden;
-  border-radius: 8px;
-  border: 1px solid #384336;
+  border-radius: var(--glass-radius);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-medium);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -246,7 +248,7 @@ input {
   position: absolute;
   width: 120px;
   height: 120px;
-  border: 1px solid #566749;
+  border: 1px solid var(--color-brand-secondary);
   transform: rotate(-30deg);
   transition: transform 0.4s;
 }
@@ -254,7 +256,7 @@ input {
   transform: rotate(-10deg) scale(1.2);
 }
 .archive-glyph {
-  color: #d2e8b5;
+  color: var(--color-portal-accent);
   font:
     48px ui-monospace,
     monospace;
@@ -268,30 +270,22 @@ input {
     10px ui-monospace,
     monospace;
   letter-spacing: 2px;
-  color: #a5b397;
+  color: var(--color-text-secondary);
 }
 .archive-arrow {
   position: absolute;
   top: 12px;
   right: 16px;
   font-size: 24px;
-  color: #d2e8b5;
-}
-.archive-project .archive-art {
-  background: #292725;
-  border-color: #494136;
+  color: var(--color-portal-accent);
 }
 .archive-project .archive-glyph,
 .archive-project .archive-arrow {
-  color: #e6c28f;
-}
-.archive-member .archive-art {
-  background: #252b30;
-  border-color: #38434d;
+  color: var(--color-brand-secondary);
 }
 .archive-member .archive-glyph,
 .archive-member .archive-arrow {
-  color: #b2cdd7;
+  color: var(--color-portal-accent);
 }
 .archive-copy {
   padding: 20px 2px;

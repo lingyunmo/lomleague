@@ -232,7 +232,7 @@ onBeforeUnmount(() => {
   gap: 24px;
   padding: 34px 36px 64px;
   color: var(--color-text-primary);
-  background: var(--color-bg-dark);
+  background: transparent;
 }
 
 .profile-left {
@@ -250,10 +250,11 @@ onBeforeUnmount(() => {
 .profile-card,
 .ach-card,
 .activity-card {
-  background: color-mix(in srgb, var(--color-text-primary) 3%, var(--color-bg-dark));
-  border: 1px solid color-mix(in srgb, var(--color-text-primary) 13%, transparent);
-  border-radius: 4px;
-  backdrop-filter: none;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--glass-radius);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-medium);
 }
 
 .profile-header {
