@@ -37,7 +37,7 @@ const updateUserSchema = z
     avatar: avatarSchema,
   })
   .refine((data) => data.username || data.email || data.avatar, {
-    message: '至少需要提供 username、email 或 avatar 中的一个',
+    message: '请至少修改用户名、邮箱或头像中的一项',
   });
 
 const changePasswordSchema = z.object({
@@ -252,7 +252,7 @@ router.get(
     if (streak >= 365)
       achievements.push({ key: 'streak_365', name: '签到之王', desc: '连续签到365天', icon: '👑', unlocked: true });
     if (daysSinceJoin >= 365)
-      achievements.push({ key: 'veteran', name: '入盟元老', desc: '加入超过365天', icon: '🏆', unlocked: true });
+      achievements.push({ key: 'veteran', name: '社区常驻', desc: '网站账号注册满365天', icon: '🏆', unlocked: true });
 
     const count = achievements.length;
     const frame = count >= 8 ? 'legend' : count >= 6 ? 'gold' : count >= 4 ? 'silver' : count >= 2 ? 'bronze' : 'none';
@@ -267,7 +267,7 @@ router.get(
       { key: 'streak_7', name: '坚持不懈', desc: '连续签到7天', icon: '🔥' },
       { key: 'streak_30', name: '风雨无阻', desc: '连续签到30天', icon: '💪' },
       { key: 'streak_365', name: '签到之王', desc: '连续签到365天', icon: '👑' },
-      { key: 'veteran', name: '入盟元老', desc: '加入超过365天', icon: '🏆' },
+      { key: 'veteran', name: '社区常驻', desc: '网站账号注册满365天', icon: '🏆' },
     ];
     const unlockedKeys = new Set(achievements.map((a) => a.key));
     const locked = allKeys.filter((k) => !unlockedKeys.has(k.key)).map((k) => ({ ...k, unlocked: false }));
@@ -287,7 +287,7 @@ router.post(
   asyncHandler(async (req, res) => {
     const { userIds } = req.body;
     if (!Array.isArray(userIds) || userIds.length > 100) {
-      return res.status(400).json({ message: 'userIds 需为数组且不超过100个' });
+      return res.status(400).json({ message: '用户列表格式不正确或超过100人' });
     }
     const frames = {};
     for (const uid of userIds) {

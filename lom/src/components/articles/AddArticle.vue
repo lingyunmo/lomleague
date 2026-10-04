@@ -1,8 +1,8 @@
 <template>
   <n-form ref="formRef" :model="formData" :rules="rules" label-placement="top">
-    <!-- 文章标题 -->
+    <!-- 公告标题 -->
     <n-form-item label="标题" path="title" required>
-      <n-input v-model:value="formData.title" placeholder="请输入文章标题" />
+      <n-input v-model:value="formData.title" placeholder="请输入公告标题" />
     </n-form-item>
 
     <!-- 地区信息 -->
@@ -12,7 +12,7 @@
 
     <!-- Markdown 编辑器 -->
     <n-form-item label="内容" path="content" required>
-      <v-md-editor v-model="formData.content" placeholder="输入文章内容（支持 Markdown 语法）..." />
+      <v-md-editor v-model="formData.content" placeholder="输入公告内容（支持 Markdown 语法）..." />
     </n-form-item>
 
     <!-- 附件上传 -->
@@ -44,7 +44,7 @@
 
 <script setup>
 /**
- * AddArticle — 创建文章表单
+ * AddArticle — 创建公告表单
  * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
  */
 import { ref, watch, onBeforeUnmount, onMounted } from 'vue';
@@ -119,12 +119,12 @@ const handleSubmit = async () => {
     });
 
     if (!isCurrent(request)) return;
-    message.success('文章创建成功！');
+    message.success('公告创建成功！');
     emit('created');
     resetForm();
   } catch {
     if (!isCurrent(request)) return;
-    message.error('创建文章失败，请稍后重试。');
+    message.error('创建公告失败，请稍后重试。');
   } finally {
     if (isCurrent(request)) submitting.value = false;
   }

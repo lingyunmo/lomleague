@@ -49,7 +49,7 @@
           <n-descriptions-item label="帖子">{{ stat('postCount') }}</n-descriptions-item>
           <n-descriptions-item label="回复">{{ stat('replyCount') }}</n-descriptions-item>
           <n-descriptions-item label="获赞">{{ stat('totalLikes') }}</n-descriptions-item>
-          <n-descriptions-item label="签到">{{ user.checkin_streak || 0 }} 天</n-descriptions-item>
+          <n-descriptions-item label="连续签到">{{ user.checkin_streak || 0 }} 天</n-descriptions-item>
           <n-descriptions-item label="注册">{{ formatDate(user.createdAt) }}</n-descriptions-item>
         </n-descriptions>
       </n-card>
@@ -83,7 +83,7 @@
 
       <!-- 近期动态 -->
       <n-card :bordered="false" class="activity-card" hoverable title="📋 近期动态">
-        <p class="activity-description">你最近的 5 条帖子更新与回复，按实际时间排序。</p>
+        <p class="activity-description">最近的帖子和回复，按时间排序，最多显示 5 条。</p>
         <div v-if="activityError" role="alert" class="read-error">
           <p>{{ activityError }}</p>
           <button type="button" :disabled="activityLoading" @click="fetchActivities">重新加载动态</button>
@@ -131,7 +131,7 @@ const achievements = computed(() => authStore.achList);
 const achCount = computed(() => authStore.achCount);
 const achFrame = computed(() => authStore.achFrame);
 const frameNames = {
-  none: '未激活',
+  none: '尚未解锁头像框',
   bronze: '🥉 青铜框',
   silver: '🥈 白银框',
   gold: '🥇 黄金框',
@@ -140,7 +140,7 @@ const frameNames = {
 const nextFrame = computed(() => {
   if (!authStore.achReady) return '成就尚未加载';
   const c = achCount.value;
-  if (c >= 8) return '已达最高等级！';
+  if (c >= 8) return '已解锁最高等级头像框';
   if (c >= 6) return `再解锁 ${8 - c} 个成就 → 传说框`;
   if (c >= 4) return `再解锁 ${6 - c} 个成就 → 黄金框`;
   if (c >= 2) return `再解锁 ${4 - c} 个成就 → 白银框`;

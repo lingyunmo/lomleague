@@ -2,8 +2,8 @@
   <div class="auth-page">
     <div class="auth-card">
       <img src="/logo.jpg" alt="lom" class="auth-logo" />
-      <h2 class="auth-title">加入 lom 联盟</h2>
-      <p class="auth-sub">创建你的账号</p>
+      <h2 class="auth-title">注册网站账号</h2>
+      <p class="auth-sub">用于登录、发帖与签到，不代表正式入盟。</p>
 
       <n-form ref="formRef" :model="form" :rules="rules" class="auth-form">
         <n-form-item class="avatar-item">

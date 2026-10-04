@@ -79,7 +79,7 @@ function button(text) {
   return wrapper.findAll('button').find((item) => item.text() === text);
 }
 async function fill() {
-  await wrapper.get('input[placeholder="请输入文章标题"]').setValue('公告 中文🧱100% %E4%B8%AD');
+  await wrapper.get('input[placeholder="请输入公告标题"]').setValue('公告 中文🧱100% %E4%B8%AD');
   await wrapper.get('textarea').setValue('公告正文 100% %E4%B8%AD');
 }
 describe('article creation form boundaries', () => {

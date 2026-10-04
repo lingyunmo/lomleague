@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.24 — 2026-10-05
+
+- Replace vague homepage/community slogans with concrete content and action labels. Distinguish website registration from formal membership; keep original works, nicknames, chronology and the formal invitation's existing rules. Avoid choosing between the conflicting2014/2015 founding claims.
+- Unify announcement terminology and clarify notification actions, frame progress, historical archive summaries, avatar/attachment upload feedback and draft-only removal. Set the global Chinese/date locale around pages, dialogs and messages without changing palette/glass controls.
+- Identify the invitation generator as a PDF template, not automatic admission. Remove internal Docker network names, localize predefined directions and generation failures, and retain custom text, filenames and all four formal document pages.
+- Repair reproduced homepage request races: lock check-in before dispatch, require a loaded profile, scope results to the current member/session/component and prevent stale requests from clearing another request's state. Ignore out-of-order posts and post-unmount clipboard feedback. Preserve server rewards, date rules and already-sent writes.
+- Add28 regression tests and pass834 local tests, zero-warning lint, frozen install, production build/audit and actual read-only API/built-asset HTTP checks. Existing homepage/archive/world compiled styles are unchanged. Background-only verification; no computer use or visual-browser acceptance. No schema, production-data, upload-name/UTF-8, timestamp or IP-provider changes.
+
+## 2.0.23 — 2026-10-05
+
+- Add layered masked hero entrances, scroll reveals, original terrain assembly, floating palette-aware accents, bounded pointer depth and archive-filter transitions without new dependencies or automatic third-party media.
+- Respect reduced motion, coarse pointers, offscreen scenes, tab visibility and keyboard focus; scope observer/listener/frame cleanup to the page. Preserve six global palettes/glass preferences and existing community/server/check-in behavior.
+- Add22 motion/component/compiler regressions and pass806 local tests plus build/lint/audit/read-only API/asset checks. Correct the actual scoped assembly selector before releasing the GitHub-verified batch. Background-only checks; no browser or computer use.
+
 ## 2.0.22 — 2026-10-05
 
 - Derive login IP and limiter keys from the same explicitly trusted proxy chain; ignore client-submitted login IP/region and arbitrary real-IP/CDN headers. Strictly normalize IPv4/mapped IPv6/IPv6 and exclude private/reserved addresses from external lookups.

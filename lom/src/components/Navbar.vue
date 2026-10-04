@@ -43,14 +43,14 @@
           <template #icon>
             <n-icon><Ribbon /></n-icon>
           </template>
-          入盟申请
+          通知书模板
         </n-button>
 
         <n-button quaternary @click="router.push({ name: 'About' })">
           <template #icon>
             <n-icon><People /></n-icon>
           </template>
-          曾经的我们
+          联盟历史
         </n-button>
 
         <n-button quaternary @click="goToAnniversary">

@@ -69,8 +69,8 @@
         fill="none"
       />
     </svg>
-    <span class="world-label"><i /> WORLD / LOM · SINCE 2014</span>
-    <span class="world-caption">下一块方块，属于你。</span>
+    <span class="world-label"><i /> MINECRAFT / LOM</span>
+    <span class="world-caption">Minecraft 玩家社区</span>
   </div>
 </template>
 

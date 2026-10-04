@@ -35,6 +35,7 @@ const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
 export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
   const message = useMessage();
+  const uploadLabel = Array.isArray(attachmentsRef.value) ? '附件' : '头像';
   const allowedTypes = constraints.allowedTypes || DEFAULT_ALLOWED_TYPES;
   const maxSize = constraints.maxSize || DEFAULT_MAX_SIZE;
   const auth = useAuthStore();
@@ -102,7 +103,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
             status: 'finished',
           },
         ];
-        message.success('附件上传成功');
+        message.success(`${uploadLabel}上传成功`);
         onFinish();
       } else {
         throw new Error('服务器未返回文件 URL');
@@ -116,7 +117,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
           typeof detail === 'string' &&
           detail.length <= 160
           ? detail
-          : '附件上传失败',
+          : `${uploadLabel}上传失败`,
       );
       onError();
     } finally {
@@ -150,7 +151,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
     if (fileListRef.value) {
       fileListRef.value = fileListRef.value.filter((item) => item.id !== file.id && (!url || item.url !== url));
     }
-    message.info('附件已移除');
+    message.info(`${uploadLabel}已从当前表单移除`);
   }
 
   /** 附件是否全部上传完成 */

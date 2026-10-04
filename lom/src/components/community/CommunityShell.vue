@@ -14,13 +14,13 @@
         <div class="community-actions"><slot name="actions" /></div>
       </header>
       <div class="community-index">
-        <span>{{ keyword ? 'SEARCH RESULTS' : 'LATEST UPDATES' }}</span>
+        <span>{{ keyword ? '搜索结果' : '最新内容' }}</span>
         <p aria-live="polite">
           {{ keyword ? '匹配' : '共' }} <strong>{{ total }}</strong> 条内容
         </p>
       </div>
       <slot />
-      <p class="community-footnote">BUILT TOGETHER · 每一个想法，都值得留下。</p>
+      <p class="community-footnote">lom 联盟社区</p>
     </div>
   </section>
 </template>

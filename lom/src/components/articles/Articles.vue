@@ -2,16 +2,16 @@
   <div :aria-busy="loading">
     <CommunityShell
       title="联盟公告"
-      eyebrow="THE ALLIANCE BULLETIN / 02"
-      description="从重要消息到项目进展。记录联盟的每一次前行。"
+      eyebrow="联盟公告 / 02"
+      description="查看联盟通知、活动安排与项目进展。"
       :total="totalArticles"
       :keyword="searchKeyword"
     >
       <template #actions>
         <n-input
           v-model:value="searchKeyword"
-          :input-props="{ 'aria-label': '搜索文章' }"
-          placeholder="搜索文章..."
+          :input-props="{ 'aria-label': '搜索公告' }"
+          placeholder="搜索公告..."
           clearable
         >
           <template #prefix
@@ -24,7 +24,7 @@
           >发布公告
         </n-button>
       </template>
-      <div v-if="loading" class="list-loading" role="status"><n-spin size="small" /><span>正在加载文章…</span></div>
+      <div v-if="loading" class="list-loading" role="status"><n-spin size="small" /><span>正在加载公告…</span></div>
       <ListFetchFeedback :message="error" @retry="fetchArticles()" />
       <div class="community-list">
         <CommunityEntry
@@ -38,12 +38,12 @@
       </div>
       <n-empty
         v-if="!loading && !error && articles.length === 0"
-        :description="searchKeyword ? '没有匹配的文章' : '暂无文章'"
+        :description="searchKeyword ? '没有匹配的公告' : '暂无公告'"
         class="empty-state"
       >
         <template #extra>
           <n-button v-if="searchKeyword" @click="searchKeyword = ''">清空搜索</n-button>
-          <n-button v-else-if="authStore.isAdmin" @click="showAddArticleModal = true">发布第一篇文章</n-button>
+          <n-button v-else-if="authStore.isAdmin" @click="showAddArticleModal = true">发布第一篇公告</n-button>
         </template>
       </n-empty>
       <Pagination
@@ -55,7 +55,7 @@
     </CommunityShell>
     <n-modal
       v-model:show="showAddArticleModal"
-      title="新增文章"
+      title="新增公告"
       preset="card"
       style="width: min(760px, calc(100vw - 32px)); padding: 2px; border-radius: 16px; overflow: auto"
     >
@@ -131,7 +131,7 @@ const confirmDeleteArticle = (articleId) => {
   let confirmed = false;
   pendingDialog = dialog.warning({
     title: '确认删除',
-    content: '删除后无法恢复，确定删除此文章？',
+    content: '删除后无法恢复，确定删除此公告？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -140,7 +140,7 @@ const confirmDeleteArticle = (articleId) => {
       try {
         await articleApi.deleteArticle(articleId);
         if (!isCurrent(request)) return;
-        message.success('文章已删除');
+        message.success('公告已删除');
         fetchArticles();
       } catch {
         if (!isCurrent(request)) return;

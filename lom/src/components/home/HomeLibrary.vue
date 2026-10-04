@@ -2,10 +2,10 @@
   <section id="explore" class="library home-section">
     <div class="section-heading" data-reveal>
       <div>
-        <p class="eyebrow">02 / CREATIVE ARCHIVE</p>
-        <h2>每一个世界，都有故事。</h2>
+        <p class="eyebrow">02 / 作品与项目</p>
+        <h2>原创视频、模组与成员主页</h2>
       </div>
-      <span class="section-note">留下作品，也留下我们。</span>
+      <span class="section-note">浏览作品，查看项目与创作者。</span>
     </div>
     <div class="library-tools" data-reveal>
       <div class="library-tabs" role="group" aria-label="作品分类">
@@ -62,7 +62,7 @@
     <p class="archive-hint" data-reveal>影像和成员主页在新标签页打开；主页不会自动加载第三方播放器。</p>
     <details class="history-details" data-reveal>
       <summary>
-        打开完整的联盟历史档案 <span>2015 — 2025 / {{ youkuHighlights.length }} 条记录</span>
+        优酷时期作品记录 <span>{{ youkuHighlights.length }} 条记录</span>
       </summary>
       <ul>
         <li v-for="record in youkuHighlights" :key="record">{{ record }}</li>

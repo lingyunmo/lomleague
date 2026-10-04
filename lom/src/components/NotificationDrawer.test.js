@@ -208,7 +208,7 @@ describe('private notification drawer identity', () => {
     calls.getNotifications.mockResolvedValue({ data: { notifications: [notification(1), notification(2)] } });
     fixture(true);
     await flushPromises();
-    const all = wrapper.findAll('button').find((item) => item.text() === '全部已读');
+    const all = wrapper.findAll('button').find((item) => item.text() === '全部标为已读');
     await all.trigger('click');
     await all.trigger('click');
     await wrapper.get('.notification-button').trigger('click');
@@ -227,7 +227,7 @@ describe('private notification drawer identity', () => {
     await flushPromises();
     await wrapper
       .findAll('button')
-      .find((item) => item.text() === '全部已读')
+      .find((item) => item.text() === '全部标为已读')
       .trigger('click');
     if (context === 'stale') auth.token = null;
     marking.reject(new Error('offline'));

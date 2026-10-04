@@ -31,7 +31,7 @@ router.post('/batch-counts', asyncHandler(async (req, res) => {
 router.post('/toggle', authMiddleware, asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.body;
   if (!entityType || !entityId || !['post', 'reply', 'article'].includes(entityType)) {
-    return res.status(400).json({ message: '无效的 entityType 或 entityId' });
+    return res.status(400).json({ message: '点赞目标无效，请刷新页面后重试' });
   }
   const result = await LikeService.toggle(
     req.user.id,
@@ -46,7 +46,7 @@ router.post('/toggle', authMiddleware, asyncHandler(async (req, res) => {
 router.get('/count', asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.query;
   if (!entityType || !entityId) {
-    return res.status(400).json({ message: '缺少参数 entityType 或 entityId' });
+    return res.status(400).json({ message: '缺少点赞查询目标，请刷新页面后重试' });
   }
   const result = await LikeService.getCount(entityType, parseInt(entityId));
   res.json(result);
@@ -56,7 +56,7 @@ router.get('/count', asyncHandler(async (req, res) => {
 router.get('/status', authMiddleware, asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.query;
   if (!entityType || !entityId) {
-    return res.status(400).json({ message: '缺少参数 entityType 或 entityId' });
+    return res.status(400).json({ message: '缺少点赞查询目标，请刷新页面后重试' });
   }
   const result = await LikeService.getUserStatus(req.user.id, entityType, parseInt(entityId));
   res.json(result);

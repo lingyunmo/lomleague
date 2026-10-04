@@ -2,7 +2,7 @@
   <div class="history-container">
     <!-- 标题区 -->
     <div class="history-hero">
-      <h1 class="history-title">曾经的我们</h1>
+      <h1 class="history-title">联盟历史</h1>
       <p class="history-subtitle">
         2015—2026 · 十一周年 · 从 Love Me 到 Legacy Of Minecraft
       </p>
@@ -22,7 +22,7 @@
     </n-card>
 
     <!-- 编年史 -->
-    <n-card class="section-card" title="完整编年史" hoverable>
+    <n-card class="section-card" title="联盟编年记录" hoverable>
       <n-timeline>
         <n-timeline-item
           v-for="era in eras"
@@ -90,7 +90,7 @@
     </n-card>
 
     <!-- 视频产量 -->
-    <n-card class="section-card" title="视频产量" hoverable>
+    <n-card class="section-card" title="视频统计（历史记录）" hoverable>
       <n-grid :cols="3" :x-gap="16" :y-gap="16">
         <n-gi>
           <n-card class="stat-card" size="small" hoverable>
@@ -123,7 +123,7 @@
           lom 联盟不是商业公司，也不是游戏工作室。
         </n-text>
         <n-text class="outro-text">
-          它是一个以 Minecraft 为纽带的青少年创作社群，2015 年从优酷起家。
+          它是一个以 Minecraft 为纽带的玩家创作社区，2015 年从优酷起家。
         </n-text>
         <n-text class="outro-text">
           11 年 · 300+ 视频 · 2 个自研 Mod · 3 次重启 · 5 次更名

@@ -4,37 +4,36 @@
       <div class="hero-copy">
         <p class="eyebrow hero-enter" style="--enter-step: 0"><span class="tiny-block" /> LEGACY OF MINECRAFT LEAGUE</p>
         <h1>
-          <span class="hero-line"><span class="hero-line-text" style="--enter-step: 1">一起，把世界</span></span
+          <span class="hero-line"><span class="hero-line-text" style="--enter-step: 1">lom 联盟</span></span
           ><span class="hero-line hero-title-accent"
-            ><span class="hero-line-text" style="--enter-step: 2">建得更大。</span></span
+            ><span class="hero-line-text" style="--enter-step: 2">玩家社区</span></span
           >
         </h1>
         <p class="hero-description hero-enter" style="--enter-step: 3">
-          从第一块方块，到属于我们的世界。<br />这里是 lom 联盟，一群热爱创造的人的长期存档。
+          分享 Minecraft 建筑、模组与原创影像。<br />这里汇集了联盟的作品、项目和社区动态。
         </p>
         <div class="hero-actions hero-enter" style="--enter-step: 4">
           <router-link to="/forums" class="portal-button primary">进入社区 <span>↗</span></router-link
           ><a href="#explore" class="portal-button secondary">探索我们的作品 <span>↓</span></a>
         </div>
         <div class="hero-footnote hero-enter" style="--enter-step: 5">
-          <span>SINCE <strong>2014</strong></span
-          ><span>{{ years }} 年的故事，仍在继续</span>
+          <span>作品 · 项目 · 社区</span><span>Java 版服务器：mc.bzlom.cn</span>
         </div>
       </div>
       <BlockWorld />
     </section>
 
     <div class="portal-divider" data-reveal data-motion-scene>
-      <span>BUILD. PLAY. CREATE. TOGETHER.</span><span>一个联盟，无限可能 <i data-ambient>✳</i></span>
+      <span>MINECRAFT COMMUNITY</span><span>建筑 · 模组 · 原创影像 <i data-ambient>✳</i></span>
     </div>
 
     <section class="home-section workspace">
       <div class="section-heading" data-reveal>
         <div>
-          <p class="eyebrow">01 / YOUR NEXT ADVENTURE</p>
-          <h2>今天，从这里出发。</h2>
+          <p class="eyebrow">01 / 社区与服务器</p>
+          <h2>社区与服务器</h2>
         </div>
-        <router-link to="/invite" class="text-link">成为其中一员 ↗</router-link>
+        <router-link to="/register" class="text-link">注册网站账号 ↗</router-link>
       </div>
       <div class="workspace-grid">
         <article class="workspace-card server-card" data-reveal data-depth>
@@ -45,7 +44,7 @@
             >
           </div>
           <div class="workspace-symbol" aria-hidden="true">▥</div>
-          <h3>下一个世界，见。</h3>
+          <h3>Minecraft 服务器</h3>
           <p>Java Edition · {{ server.version || '版本以服务器为准' }}</p>
           <div v-if="server.online === true" class="server-population">
             {{ server.players?.online ?? '—' }} / {{ server.players?.max ?? '—' }} 玩家<span v-if="server.stale">
@@ -66,15 +65,15 @@
         </article>
         <article class="workspace-card community-card" data-reveal data-depth style="--reveal-delay: 90ms">
           <div class="card-top">
-            <span class="card-code">COMMUNITY / 02</span><span class="card-code">留下你的声音</span>
+            <span class="card-code">COMMUNITY / 02</span><span class="card-code">社区论坛</span>
           </div>
           <div class="workspace-symbol" aria-hidden="true">↗</div>
-          <h3>新想法，旧朋友。</h3>
+          <h3>最新帖子</h3>
           <p>分享建筑、讨论模组，或只是来打声招呼。</p>
           <div class="post-list" aria-live="polite">
             <p v-if="postsLoading" class="state-text">正在读取社区动态…</p>
             <p v-else-if="postsError" class="state-text">暂时无法读取动态。<button @click="loadPosts">重试</button></p>
-            <p v-else-if="!posts.length" class="state-text">还没有帖子，来留下第一条足迹。</p>
+            <p v-else-if="!posts.length" class="state-text">暂无帖子，可以前往论坛发布。</p>
             <router-link v-for="post in posts" :key="post.id" :to="`/forum/${post.id}`"
               ><span>{{ post.title }}</span
               ><small>{{ post.user?.username || '联盟成员' }} ↗</small></router-link
@@ -83,26 +82,24 @@
           <router-link to="/forums" class="card-bottom-link">打开社区论坛 <span>↗</span></router-link>
         </article>
         <article class="workspace-card member-card" data-reveal data-depth style="--reveal-delay: 180ms">
-          <div class="card-top">
-            <span class="card-code">MEMBER / 03</span><span class="card-code">每天都有小惊喜</span>
-          </div>
+          <div class="card-top"><span class="card-code">MEMBER / 03</span><span class="card-code">每日签到</span></div>
           <div class="workspace-symbol" aria-hidden="true">✳</div>
-          <h3>{{ auth.user ? `你好，${auth.userDisplayName}` : '不止是路过。' }}</h3>
+          <h3>{{ auth.user ? `你好，${auth.userDisplayName}` : '登录与签到' }}</h3>
           <template v-if="auth.token"
             ><p v-if="auth.userError" role="status">
               {{ auth.userError }} <button @click="auth.fetchUser()" :disabled="auth.userLoading">重试</button>
             </p>
-            <p>连续签到 {{ auth.user?.checkin_streak || 0 }} 天，继续积攒你的联盟金币。</p>
-            <strong class="coin-count">{{ auth.user?.gold_coins || 0 }} <small>金币</small></strong
+            <p>连续签到 {{ auth.user?.checkin_streak ?? '—' }} 天</p>
+            <strong class="coin-count">{{ auth.user?.gold_coins ?? '—' }} <small>金币</small></strong
             ><n-button type="primary" :loading="checkinLoading" :disabled="!canCheckin" @click="checkin">{{
-              canCheckin ? '完成今日签到' : '今日已签到 ✓'
+              checkinLabel
             }}</n-button
             ><router-link to="/profile" class="card-bottom-link">我的联盟档案 <span>↗</span></router-link></template
           >
           <template v-else
-            ><p>创建你的联盟档案，把每一次相遇都留在这里。</p>
+            ><p>注册网站账号，参与社区讨论与每日签到。</p>
             <div class="member-marks" aria-hidden="true"><span>l</span><span>o</span><span>m</span><span>+</span></div>
-            <router-link to="/login" class="card-bottom-link">登录 / 加入联盟 <span>↗</span></router-link></template
+            <router-link to="/login" class="card-bottom-link">登录 / 注册 <span>↗</span></router-link></template
           >
         </article>
       </div>
@@ -112,8 +109,8 @@
 
     <section class="home-section toolbox">
       <div data-reveal>
-        <p class="eyebrow">03 / READY TO PLAY</p>
-        <h2>准备好，开始创造。</h2>
+        <p class="eyebrow">03 / 启动器</p>
+        <h2>Minecraft 启动器</h2>
         <p>选择熟悉的启动器，下载请认准项目官方页面。</p>
       </div>
       <div class="launcher-links" data-reveal style="--reveal-delay: 100ms">
@@ -129,16 +126,16 @@
       </div>
     </section>
     <section class="home-section closing" data-motion-scene>
-      <p class="eyebrow" data-reveal>THE STORY IS STILL LOADING.</p>
-      <h2 data-reveal>故事还没结束。<br />我们，下个世界见。</h2>
-      <router-link to="/about" class="text-link" data-reveal>翻开曾经的我们 ↗</router-link
+      <p class="eyebrow" data-reveal>联盟历史</p>
+      <h2 data-reveal>历年的作品与活动</h2>
+      <router-link to="/about" class="text-link" data-reveal>了解联盟历史 ↗</router-link
       ><span class="closing-mark" aria-hidden="true" data-ambient>lom.</span>
     </section>
   </div>
 </template>
 
 <script setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue';
+import { computed, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useMessage } from 'naive-ui';
 import BlockWorld from '../components/home/BlockWorld.vue';
 import HomeLibrary from '../components/home/HomeLibrary.vue';
@@ -152,7 +149,6 @@ const portal = ref(null);
 useHomeMotion(portal);
 const auth = useAuthStore();
 const message = useMessage();
-const years = new Date().getFullYear() - 2014;
 const posts = ref([]),
   postsLoading = ref(true),
   postsError = ref(false);
@@ -162,7 +158,20 @@ const server = ref({ online: null }),
 const checkinLoading = ref(false),
   checkedIn = ref(false);
 const abortController = new AbortController();
-let copyTimer;
+let copyTimer, checkinRequest;
+let disposed = false,
+  memberGeneration = 0,
+  postsSequence = 0;
+watch(
+  [() => auth.token, () => auth.user?.id],
+  () => {
+    memberGeneration++;
+    checkinRequest = undefined;
+    checkedIn.value = false;
+    checkinLoading.value = false;
+  },
+  { flush: 'sync' },
+);
 const statusLabel = computed(() =>
   statusLoading.value
     ? '查询中'
@@ -174,10 +183,27 @@ const statusLabel = computed(() =>
           ? '服务器离线'
           : '状态暂不可用',
 );
-const canCheckin = computed(() => {
-  if (checkedIn.value) return false;
-  if (!auth.user?.last_checkin_date) return true;
-  return new Date(auth.user.last_checkin_date).toDateString() !== new Date().toDateString();
+const hasCheckedInToday = computed(() => {
+  if (checkedIn.value) return true;
+  return (
+    !!auth.user?.last_checkin_date && new Date(auth.user.last_checkin_date).toDateString() === new Date().toDateString()
+  );
+});
+const canCheckin = computed(
+  () =>
+    !!auth.token &&
+    !!auth.user?.id &&
+    !auth.userLoading &&
+    !auth.userError &&
+    !hasCheckedInToday.value &&
+    !checkinLoading.value,
+);
+const checkinLabel = computed(() => {
+  if (checkinLoading.value) return '签到中…';
+  if (hasCheckedInToday.value) return '今日已签到 ✓';
+  if (auth.userError) return '请先重试用户信息';
+  if (!auth.user?.id || auth.userLoading) return '正在读取签到状态…';
+  return '完成今日签到';
 });
 const launchers = [
   { name: 'PCL', url: 'https://github.com/Hex-Dragon/PCL2' },
@@ -186,57 +212,79 @@ const launchers = [
   { name: 'BakaXL', url: 'https://www.bakaxl.com/' },
 ];
 async function loadPosts() {
+  if (disposed) return;
+  const sequence = ++postsSequence;
   postsLoading.value = true;
   postsError.value = false;
   try {
     const res = await forumApi.getPosts({ pageSize: 3 });
+    if (disposed || sequence !== postsSequence) return;
     posts.value = res.data.posts.slice(0, 3);
   } catch {
-    postsError.value = true;
+    if (!disposed && sequence === postsSequence) postsError.value = true;
   } finally {
-    postsLoading.value = false;
+    if (!disposed && sequence === postsSequence) postsLoading.value = false;
   }
 }
 async function loadStatus() {
-  if (statusLoading.value) return;
+  if (disposed || statusLoading.value) return;
   statusLoading.value = true;
   try {
     const res = await client.get('/server/status', { signal: abortController.signal, timeout: 6000 });
-    server.value = res.data;
+    if (!disposed) server.value = res.data;
   } catch {
-    server.value = { online: null };
+    if (!disposed) server.value = { online: null };
   } finally {
-    statusLoading.value = false;
+    if (!disposed) statusLoading.value = false;
   }
 }
 async function copyAddress() {
+  if (disposed) return;
   try {
     await navigator.clipboard.writeText('mc.bzlom.cn');
+    if (disposed) return;
     copied.value = true;
     clearTimeout(copyTimer);
     copyTimer = setTimeout(() => (copied.value = false), 2200);
   } catch {
-    message.info('服务器地址：mc.bzlom.cn，请长按或选中复制');
+    if (!disposed) message.info('服务器地址：mc.bzlom.cn，请长按或选中复制');
   }
 }
 async function checkin() {
+  if (disposed || !canCheckin.value || checkinRequest) return;
+  const request = { token: auth.token, userId: auth.user.id, generation: memberGeneration };
+  checkinRequest = request;
+  const isCurrent = () =>
+    !disposed &&
+    checkinRequest === request &&
+    request.token === auth.token &&
+    request.userId === auth.user?.id &&
+    request.generation === memberGeneration;
   checkinLoading.value = true;
   try {
     const res = await userApi.checkin();
+    if (!isCurrent()) return;
     checkedIn.value = true;
     message.success(`签到成功！+${res.data.reward} 金币`);
     await auth.fetchUser();
   } catch (error) {
-    message.error(error.response?.data?.message || '签到失败，请稍后再试');
+    if (isCurrent()) message.error(error.response?.data?.message || '签到失败，请稍后再试');
   } finally {
-    checkinLoading.value = false;
+    if (isCurrent()) {
+      checkinRequest = undefined;
+      checkinLoading.value = false;
+    }
   }
 }
 onMounted(() => {
   loadPosts();
   loadStatus();
 });
-onUnmounted(() => {
+onBeforeUnmount(() => {
+  disposed = true;
+  memberGeneration++;
+  postsSequence++;
+  checkinRequest = undefined;
   abortController.abort();
   clearTimeout(copyTimer);
 });

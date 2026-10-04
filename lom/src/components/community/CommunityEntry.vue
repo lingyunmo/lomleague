@@ -3,7 +3,7 @@
     <RouterLink
       class="entry-link"
       :to="destination"
-      :aria-label="`阅读${type === 'post' ? '帖子' : '文章'}：${item.title}`"
+      :aria-label="`阅读${type === 'post' ? '帖子' : '公告'}：${item.title}`"
     >
       <UserFrame :userId="item.userId" :src="item.user?.avatar" :size="40" aria-hidden="true" />
       <div class="entry-content">
@@ -27,7 +27,7 @@
         quaternary
         size="small"
         type="error"
-        :aria-label="`删除${type === 'post' ? '帖子' : '文章'}：${item.title}`"
+        :aria-label="`删除${type === 'post' ? '帖子' : '公告'}：${item.title}`"
         @click="$emit('delete', item.id)"
         ><template #icon
           ><n-icon><Trash /></n-icon></template

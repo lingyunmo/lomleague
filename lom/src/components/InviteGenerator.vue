@@ -1,8 +1,8 @@
 <template>
   <div class="invite-page">
     <div class="invite-card">
-      <h2>📄 生成入盟通知书</h2>
-      <p class="invite-desc">填写信息，生成正式录取通知书及入盟须知（PDF）</p>
+      <h2>📄 入盟通知书模板</h2>
+      <p class="invite-desc">填写信息，生成通知书及入盟须知（PDF）。生成文件不代表已通过入盟审核。</p>
 
       <n-form :model="form" label-placement="left" label-width="100px" class="invite-form">
         <n-form-item label="B站昵称">
@@ -16,7 +16,7 @@
         </n-form-item>
         <n-button type="primary" size="large" block :loading="generating" @click="generateOffer">
           <template #icon><n-icon><Download /></n-icon></template>
-          生成录取通知书 (PDF)
+          生成通知书模板 (PDF)
         </n-button>
       </n-form>
     </div>
@@ -72,7 +72,7 @@
             <tr><td class="info-label">Bilibili UID</td><td class="info-val">{{ form.uid || '_______________' }}</td></tr>
             <tr><td class="info-label">Programme</td><td class="info-val">{{ form.skill || '_______________' }}</td></tr>
             <tr><td class="info-label">Duration</td><td class="info-val">Indefinite (with option to withdraw)</td></tr>
-            <tr><td class="info-label">Campus</td><td class="info-val">mc.bzlom.cn Server · common-net Virtual Campus</td></tr>
+            <tr><td class="info-label">Campus</td><td class="info-val">mc.bzlom.cn Minecraft Server</td></tr>
           </tbody>
           </table>
 
@@ -219,7 +219,7 @@
         <div class="page1-body cn-text">
           <p class="body-greeting"><strong>{{ form.nickname || '_______________' }}</strong> 同学：</p>
 
-          <p>经 <strong>lom 联盟招生委员会</strong> 审议，您的入盟申请已获 <strong>批准</strong>。您在 <strong>{{ form.skill || '_______________' }}</strong> 方向展现的能力给我们留下了深刻印象，我们相信您将为联盟做出宝贵贡献。</p>
+          <p>经 <strong>lom 联盟招生委员会</strong> 审议，您的入盟申请已获 <strong>批准</strong>。您在 <strong>{{ skillCN || '_______________' }}</strong> 方向展现的能力给我们留下了深刻印象，我们相信您将为联盟做出宝贵贡献。</p>
 
           <p>兹录取您为 <strong>lom 联盟 {{ year }} 年度核心成员</strong>。</p>
 
@@ -227,9 +227,9 @@
 <tbody>
             <tr><td class="info-label">学生 ID</td><td class="info-val">{{ studentId }}</td></tr>
             <tr><td class="info-label">B站 UID</td><td class="info-val">{{ form.uid || '_______________' }}</td></tr>
-            <tr><td class="info-label">录取方向</td><td class="info-val">{{ form.skill || '_______________' }}</td></tr>
+            <tr><td class="info-label">录取方向</td><td class="info-val">{{ skillCN || '_______________' }}</td></tr>
             <tr><td class="info-label">学制</td><td class="info-val">无限期（可主动退学）</td></tr>
-            <tr><td class="info-label">校区</td><td class="info-val">mc.bzlom.cn 服务器 · common-net 虚拟校区</td></tr>
+            <tr><td class="info-label">校区</td><td class="info-val">mc.bzlom.cn Minecraft 服务器</td></tr>
           </tbody>
           </table>
 
@@ -301,7 +301,7 @@
           <div class="section">
             <div class="section-num">2</div>
             <div class="section-content">
-              <h4>权责与义务</h4>
+              <h4>权利与义务</h4>
               <p>作为核心成员，您享有：自由进出 lom 联盟所有 Minecraft 服务器（含 mc.bzlom.cn）的权利；参与全部社区活动（竞技赛、歌会、水友赛等）的权利；参与 lom 联盟内容创作（视频、Mod、服务器建筑等）的权利。</p>
               <p>您应尽义务：在所有公开平台维护 lom 联盟声誉；建议在各平台使用「lom_」前缀命名以树立社区品牌形象；遵守 lom 联盟章程及全部社区准则；支持其他成员的创作活动。</p>
             </div>
@@ -366,6 +366,7 @@ const skillOptions = [
 ]
 
 const studentId = computed(() => `LOM-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`)
+const skillCN = computed(() => skillOptions.find(option => option.value === form.value.skill)?.label || form.value.skill)
 
 const year = new Date().getFullYear()
 const today = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -397,8 +398,8 @@ const generateOffer = async () => {
       pdf.addImage(imgData, 'PNG', 0, 0, w, Math.min(h, 297))
     }
     pdf.save(`lom_admission_${form.value.nickname}.pdf`)
-    message.success('录取通知书已生成！')
-  } catch { message.error('Generation failed') }
+    message.success('通知书模板已生成')
+  } catch { message.error('PDF 生成失败，请重试') }
   finally { generating.value = false }
 }
 </script>

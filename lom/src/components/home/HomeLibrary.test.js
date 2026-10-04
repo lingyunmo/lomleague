@@ -8,6 +8,8 @@ describe('searchable archive', () => {
     expect(wrapper.findAll('.archive-card')).toHaveLength(6);
     expect(wrapper.findAll('details')).toHaveLength(4);
     expect(wrapper.text()).toContain('中二病的学校疗法');
+    expect(wrapper.find('summary').text()).toBe('优酷时期作品记录 13 条记录');
+    expect(wrapper.text()).not.toContain('2015 — 2025');
   });
   it('searches projects without mutating stored content', async () => {
     const wrapper = mount(HomeLibrary);

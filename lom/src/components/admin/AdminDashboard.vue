@@ -9,7 +9,7 @@
         <n-data-table :columns="userColumns" :data="users" :loading="uloading" :pagination="{ pageSize: 20 }" :row-key="r => r.id" />
       </n-tab-pane>
 
-      <n-tab-pane name="articles" tab="文章管理">
+      <n-tab-pane name="articles" tab="公告管理">
         <n-data-table :columns="articleColumns" :data="articles" :loading="aloading" :pagination="{ pageSize: 20 }" :row-key="r => r.id" />
       </n-tab-pane>
 
@@ -76,13 +76,13 @@ const saveUser = async () => {
   try {
     const p = { username: userForm.value.username, email: userForm.value.email, is_admin: userForm.value.is_admin }
     if (userForm.value.password) p.password = userForm.value.password
-    if (editingId.value) { await adminApi.updateUser(editingId.value, p); message.success('已更新') }
-    else { if (!userForm.value.password) { message.warning('请输入密码'); saving.value = false; return }; await adminApi.createUser(p); message.success('已创建') }
+    if (editingId.value) { await adminApi.updateUser(editingId.value, p); message.success('用户信息已更新') }
+    else { if (!userForm.value.password) { message.warning('请输入密码'); saving.value = false; return }; await adminApi.createUser(p); message.success('用户已创建') }
     showUserModal.value = false; fetchUsers()
-  } catch (e) { message.error(e.response?.data?.message || '失败') }
+  } catch (e) { message.error(e.response?.data?.message || '保存用户信息失败，请重试') }
   finally { saving.value = false }
 }
-const removeUser = async id => { try { await adminApi.deleteUser(id); message.success('已删除'); fetchUsers() } catch { message.error('删除失败') } }
+const removeUser = async id => { try { await adminApi.deleteUser(id); message.success('用户已删除'); fetchUsers() } catch { message.error('删除用户失败') } }
 
 // ======== Articles ========
 const articles = ref([]), aloading = ref(false)
@@ -96,7 +96,7 @@ const articleColumns = [
   },
 ]
 const fetchArticles = async () => { aloading.value = true; try { articles.value = (await articleApi.getArticles({ pageSize: 200 })).data.articles } finally { aloading.value = false } }
-const removeArticle = async id => { try { await articleApi.deleteArticle(id); message.success('已删除'); fetchArticles() } catch { message.error('删除失败') } }
+const removeArticle = async id => { try { await articleApi.deleteArticle(id); message.success('公告已删除'); fetchArticles() } catch { message.error('删除公告失败') } }
 
 // ======== Posts ========
 const posts = ref([]), ploading = ref(false)
@@ -111,7 +111,7 @@ const postColumns = [
   },
 ]
 const fetchPosts = async () => { ploading.value = true; try { posts.value = (await forumApi.getPosts({ pageSize: 200 })).data.posts } finally { ploading.value = false } }
-const removePost = async id => { try { await forumApi.deletePost(id); message.success('已删除'); fetchPosts() } catch { message.error('删除失败') } }
+const removePost = async id => { try { await forumApi.deletePost(id); message.success('帖子已删除'); fetchPosts() } catch { message.error('删除帖子失败') } }
 
 onMounted(() => { fetchUsers(); fetchArticles(); fetchPosts() })
 </script>

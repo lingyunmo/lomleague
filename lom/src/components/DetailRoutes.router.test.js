@@ -69,7 +69,7 @@ async function fixture() {
 describe('actual router detail reuse', () => {
   for (const [component, path, read, heading, deleteText] of [
     [Forum, 'forum', 'getPost', 'h2', '删除'],
-    [Article, 'article', 'getArticle', 'h1', '删除文章'],
+    [Article, 'article', 'getArticle', 'h1', '删除公告'],
   ]) {
     it(`${path}: reuses the instance, reloads its id and makes no read when leaving`, async () => {
       const router = await fixture();

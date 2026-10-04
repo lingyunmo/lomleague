@@ -1,7 +1,7 @@
 <template>
-  <n-dialog-provider>
-    <n-message-provider>
-      <n-config-provider :theme="naiveTheme" :theme-overrides="naiveThemeOverrides">
+  <n-config-provider :theme="naiveTheme" :theme-overrides="naiveThemeOverrides" :locale="zhCN" :date-locale="dateZhCN">
+    <n-dialog-provider>
+      <n-message-provider>
         <div class="app-layout">
           <a href="#main-content" class="skip-link">跳到主要内容</a>
           <Navbar />
@@ -11,9 +11,9 @@
           <Footer />
         </div>
         <ThemeSwitcher />
-      </n-config-provider>
-    </n-message-provider>
-  </n-dialog-provider>
+      </n-message-provider>
+    </n-dialog-provider>
+  </n-config-provider>
 </template>
 
 <script setup>
@@ -23,7 +23,7 @@
  */
 import { computed, onMounted, onUnmounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { darkTheme } from 'naive-ui';
+import { darkTheme, zhCN, dateZhCN } from 'naive-ui';
 import Navbar from './components/Navbar.vue';
 import Footer from './components/Footer.vue';
 import ThemeSwitcher from './components/ThemeSwitcher.vue';

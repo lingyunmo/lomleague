@@ -2,8 +2,8 @@
   <div :aria-busy="loading">
     <CommunityShell
       title="社区论坛"
-      eyebrow="THE BUILDERS' LOGBOOK / 01"
-      description="聊聊新世界，分享建造与作品。让一次探索，成为下一段故事。"
+      eyebrow="社区论坛 / 01"
+      description="讨论 Minecraft 建筑、模组与玩法，分享作品和游戏经历。"
       :total="totalPosts"
       :keyword="searchKeyword"
     >

@@ -19,7 +19,7 @@ class ArticleService {
   static async getArticle(articleId) {
     const article = await ArticleDAO.getArticleById(articleId);
     if (!article) {
-      throw new NotFoundError('文章不存在');
+      throw new NotFoundError('公告不存在');
     }
     return article;
   }

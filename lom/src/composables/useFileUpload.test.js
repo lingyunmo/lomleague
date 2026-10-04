@@ -48,6 +48,29 @@ function uploadOptions(id = 'actual-naive-id') {
 }
 
 describe('bounded upload rejection feedback', () => {
+  it.each(['头像', '附件'])(
+    'names the actual upload context (%s) without renaming or deleting the stored file',
+    async (label) => {
+      const attachments = ref(label === '头像' ? '' : []),
+        files = ref([]);
+      const name = '1720000000000_中文🧱100% %E4%B8%AD.pdf';
+      const url = `/api/upload/7/${encodeURIComponent(name)}`;
+      fixtures.upload.mockResolvedValueOnce({ data: { filename: name, url } });
+      const upload = helper(attachments, files);
+      await upload.customUpload(uploadOptions());
+      expect(fixtures.success).toHaveBeenCalledWith(`${label}上传成功`);
+      expect(files.value[0]).toMatchObject({ name, url });
+      upload.handleRemove(files.value[0]);
+      expect(fixtures.info).toHaveBeenCalledWith(`${label}已从当前表单移除`);
+      expect(attachments.value).toEqual(label === '头像' ? '' : []);
+      expect(fixtures.upload).toHaveBeenCalledOnce();
+    },
+  );
+  it('uses avatar-specific generic failure feedback', async () => {
+    fixtures.upload.mockRejectedValueOnce(new Error('network failed'));
+    await helper(ref(''), ref([])).customUpload(uploadOptions());
+    expect(fixtures.error).toHaveBeenCalledWith('头像上传失败');
+  });
   it.each([400, 413, 429, 503])('surfaces a bounded %s rejection and allows retry', async (status) => {
     fixtures.upload.mockRejectedValue({ response: { status, data: { message: '上传容量或类型受限，请稍后重试' } } });
     const attachments = ref([]),

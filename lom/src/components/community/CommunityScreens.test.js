@@ -68,7 +68,7 @@ describe('community screens with real search inputs', () => {
   });
   it('keeps announcement publishing/deletion restricted and handles legacy null content', async () => {
     const wrapper = await fixture(Articles, '/articles');
-    expect(wrapper.get('input').attributes('aria-label')).toBe('搜索文章');
+    expect(wrapper.get('input').attributes('aria-label')).toBe('搜索公告');
     expect(wrapper.get('a[href="/article/3"]').text()).toContain('保留的公告');
     expect(wrapper.text()).not.toContain('发布公告');
     expect(wrapper.find('button[aria-label^="删除"]').exists()).toBe(false);
@@ -77,6 +77,6 @@ describe('community screens with real search inputs', () => {
     Object.assign(state.auth, { token: 'local-fixture-token', user: { id: 4 }, isAdmin: true });
     const wrapper = await fixture(Articles, '/articles');
     expect(wrapper.text()).toContain('发布公告');
-    expect(wrapper.get('button[aria-label="删除文章：保留的公告"]').exists()).toBe(true);
+    expect(wrapper.get('button[aria-label="删除公告：保留的公告"]').exists()).toBe(true);
   });
 });

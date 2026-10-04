@@ -11,7 +11,7 @@
             :loading="markingAll"
             :disabled="busy"
             @click="markAllRead"
-            >全部已读</n-button
+            >全部标为已读</n-button
           >
         </n-space>
       </template>

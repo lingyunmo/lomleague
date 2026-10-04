@@ -10,31 +10,31 @@
             <template #icon>
               <n-icon><ArrowBack /></n-icon>
             </template>
-            返回全部文章
+            返回全部公告
           </n-button>
           <LikeButton v-if="article.id" entity-type="article" :entity-id="article.id" />
           <n-button type="info" @click="copyLink">
             <template #icon>
               <n-icon><ShareSocial /></n-icon>
             </template>
-            分享文章
+            分享公告
           </n-button>
           <n-button v-if="authStore.isAdmin" type="warning" @click="startEdit">
             <template #icon
               ><n-icon><CreateOutline /></n-icon
             ></template>
-            编辑文章
+            编辑公告
           </n-button>
           <n-button v-if="authStore.isAdmin" type="error" @click="confirmDeleteArticle">
             <template #icon
               ><n-icon><Trash /></n-icon
             ></template>
-            删除文章
+            删除公告
           </n-button>
         </n-space>
       </div>
 
-      <!-- 文章内容卡片 -->
+      <!-- 公告内容卡片 -->
       <n-card class="main-article" hoverable>
         <n-space vertical>
           <!-- 用户信息行 -->
@@ -53,7 +53,7 @@
             </n-tag>
           </n-space>
 
-          <!-- 文章内容（编辑/只读切换） -->
+          <!-- 公告内容（编辑/只读切换） -->
           <template v-if="isEditing">
             <n-input v-model:value="editForm.title" placeholder="标题" />
             <v-md-editor v-model="editForm.content" height="300px" />
@@ -156,7 +156,7 @@ const saveEdit = async () => {
   }
 };
 
-// 获取文章详情
+// 获取公告详情
 const fetchArticle = async () => {
   const request = context();
   const sequence = ++articleRequest;
@@ -166,14 +166,14 @@ const fetchArticle = async () => {
     article.value = response.data || {};
   } catch {
     if (!isCurrent(request) || sequence !== articleRequest) return;
-    message.error('获取文章失败，请稍后重试');
+    message.error('获取公告失败，请稍后重试');
     await router.push('/articles');
   } finally {
     if (isCurrent(request) && sequence === articleRequest) loading.value = false;
   }
 };
 
-// 返回全部文章
+// 返回全部公告
 const goBack = () => {
   returnToList(router, '/articles');
 };
@@ -198,7 +198,7 @@ const confirmDeleteArticle = () => {
   let confirmed = false;
   pendingDialog = dialog.warning({
     title: '确认删除',
-    content: '删除后无法恢复，确定删除此文章？',
+    content: '删除后无法恢复，确定删除此公告？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
@@ -207,7 +207,7 @@ const confirmDeleteArticle = () => {
       try {
         await articleApi.deleteArticle(articleId);
         if (!isCurrent(request, true)) return;
-        message.success('文章已删除');
+        message.success('公告已删除');
         router.push({ name: 'Articles' });
       } catch {
         if (!isCurrent(request, true)) return;

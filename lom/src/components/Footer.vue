@@ -2,7 +2,7 @@
   <n-layout-footer class="footer">
     <div class="footer-content">
       <p>
-        © 2014-{{ year }} lom league. <span class="footer-version">v{{ version }} / BUILT TOGETHER.</span>
+        © 2014-{{ year }} lom league. <span class="footer-version">v{{ version }}</span>
       </p>
     </div>
   </n-layout-footer>

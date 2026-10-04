@@ -127,8 +127,8 @@ const details = [
     read: 'getArticle',
     update: 'updateArticle',
     remove: 'deleteArticle',
-    edit: '编辑文章',
-    removeText: '删除文章',
+    edit: '编辑公告',
+    removeText: '删除公告',
     heading: 'h1',
   },
 ];
@@ -327,7 +327,7 @@ describe('detail route identity and reply request order', () => {
     calls.updateArticle.mockReturnValueOnce(saving.promise);
     fixture(Article);
     await flushPromises();
-    await button('编辑文章');
+    await button('编辑公告');
     await wrapper.get('input').setValue('submitted title');
     await button('保存');
     await wrapper.get('input').setValue('not submitted');
@@ -417,17 +417,17 @@ describe('detail route identity and reply request order', () => {
     wrapper.unmount();
     fixture(Article);
     await flushPromises();
-    expect(wrapper.findAll('button').some((item) => item.text() === '删除文章')).toBe(false);
+    expect(wrapper.findAll('button').some((item) => item.text() === '删除公告')).toBe(false);
     auth.isAdmin = true;
     await flushPromises();
-    expect(wrapper.findAll('button').some((item) => item.text() === '删除文章')).toBe(true);
+    expect(wrapper.findAll('button').some((item) => item.text() === '删除公告')).toBe(true);
   });
   it('provides manual-copy feedback on article clipboard failure', async () => {
     vi.stubGlobal('navigator', { clipboard: { writeText: vi.fn().mockRejectedValue(new Error('denied')) } });
     try {
       fixture(Article);
       await flushPromises();
-      await button('分享文章');
+      await button('分享公告');
       expect(calls.error).toHaveBeenCalledWith('复制失败，请手动复制浏览器地址');
     } finally {
       vi.unstubAllGlobals();
