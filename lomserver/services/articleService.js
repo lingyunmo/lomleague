@@ -5,6 +5,7 @@
 import ArticleDAO from '../dao/ArticleDAO.js';
 import { NotFoundError } from '../utils/AppError.js';
 import logger from '../utils/logger.js';
+import UserDao from '../dao/UserDao.js';
 
 class ArticleService {
   static async getArticles(page, pageSize, keyword) {
@@ -24,12 +25,14 @@ class ArticleService {
   }
 
   static async createArticle(data) {
-    const article = await ArticleDAO.createArticle(data);
+    const article = await ArticleDAO.createArticle({ ...data, region: await UserDao.getLoginRegion(data.userId) });
     logger.info('文章已创建', { articleId: article.id });
     return article;
   }
 
   static async updateArticle(articleId, data) {
+    data = { ...data };
+    delete data.region;
     const article = await ArticleDAO.updateArticle(articleId, data);
     logger.info('文章已更新', { articleId });
     return article;

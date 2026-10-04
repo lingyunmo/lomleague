@@ -7,6 +7,7 @@ import ReplyDAO from '../dao/replyDao.js';
 import NotificationDao from '../dao/notificationDao.js';
 import { NotFoundError } from '../utils/AppError.js';
 import logger from '../utils/logger.js';
+import UserDao from '../dao/UserDao.js';
 
 class ForumService {
   // ==================== 帖子 ====================
@@ -24,12 +25,14 @@ class ForumService {
   }
 
   static async createPost(userId, data) {
-    const post = await ForumDAO.createPost({ userId, ...data });
+    const post = await ForumDAO.createPost({ ...data, userId, region: await UserDao.getLoginRegion(userId) });
     logger.info('帖子已创建', { postId: post.id, userId });
     return post;
   }
 
   static async updatePost(postId, data) {
+    data = { ...data };
+    delete data.region; // Content edits must not rewrite historical location.
     const updated = await ForumDAO.updatePost(postId, data);
     logger.info('帖子已更新', { postId });
     return updated;
@@ -50,9 +53,14 @@ class ForumService {
    * 创建回复（含通知帖子作者逻辑）
    */
   static async createReply(userId, username, data) {
-    const { postId, content, attachments, region } = data;
+    const { postId, content, attachments } = data;
+    const region = await UserDao.getLoginRegion(userId);
     const reply = await ReplyDAO.createReply({
-      postId, userId, content, attachments, region,
+      postId,
+      userId,
+      content,
+      attachments,
+      region,
     });
 
     // 通知帖子作者（非自己回复自己）
@@ -72,6 +80,8 @@ class ForumService {
   }
 
   static async updateReply(replyId, data) {
+    data = { ...data };
+    delete data.region;
     const updated = await ReplyDAO.updateReply(replyId, data);
     logger.info('回复已更新', { replyId });
     return updated;

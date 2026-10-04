@@ -6,6 +6,7 @@ import UserDao from '../dao/UserDao.js';
 import { generateToken } from '../utils/jwtUtils.js';
 import { NotFoundError, UnauthorizedError, ConflictError, ValidationError } from '../utils/AppError.js';
 import logger from '../utils/logger.js';
+import { getIpLocation } from './ipLocationService.js';
 
 class UserService {
   /**
@@ -26,7 +27,7 @@ class UserService {
    * 用户登录
    * @throws {UnauthorizedError} 用户名或密码错误
    */
-  static async login(username, password, ip, region) {
+  static async login(username, password, requestIp) {
     const user = await UserDao.getUserByUsername(username);
     if (!user) {
       throw new UnauthorizedError('用户名或密码错误');
@@ -35,10 +36,8 @@ class UserService {
     if (!isCorrect) {
       throw new UnauthorizedError('用户名或密码错误');
     }
-    await UserDao.updateLoginInfo(user.id, {
-      lastLoginIP: ip,
-      lastLoginRegion: region,
-    });
+    const { ip, region } = await getIpLocation(requestIp);
+    await UserDao.updateLoginInfo(user.id, { lastLoginIP: ip, lastLoginRegion: region });
     const token = generateToken(user);
     logger.info('用户登录成功', { userId: user.id, username });
     return { token };

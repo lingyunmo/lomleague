@@ -10,6 +10,18 @@
 - `.ops-secrets` 与 `backups` 为 root 专用目录。应用的 `runtime.env` 使用 `lom_runtime`，仅对 `lom.*` 授予 SELECT/INSERT/UPDATE/DELETE，没有建表/删表/授权权限。
 - `.env` 中旧 root 连接不再作为应用运行连接。备份管理连接在受保护的 `mysql-admin.cnf` 中。旧 root 密码仍需另批协调轮换，不能声称已解决。
 
+## IP 来源与地区定位（2.0.22）
+
+实际入口为 Cloudflare → Nginx Proxy Manager → lom-app。应用只读取经过 Express 可信代理链解析的请求 IP，登录记录与各接口限流使用同一来源；不使用客户端请求体的 ip/region，也不直接信任 CF-Connecting-IP 或 X-Real-IP。TRUSTED_PROXY_CIDRS 留空时不信任任何代理；配置格式仅为逗号分隔的明确 IP/CIDR，不接受 true、代理跳数或 /0。
+
+服务器在 lom 的 .env 配置此键：当前入口代理是 common-net 上 nginx_proxy_manager 的172.29.0.12/32，另加入2026-10-05核对过的 Cloudflare 官方 IPv4/IPv6 网段（https://www.cloudflare.com/ips-v4 、https://www.cloudflare.com/ips-v6）。不得把整个172.29.0.0/16、全部私网、其他容器或任意 CDN 设为可信。代理重建/IP或 CDN 网段变化时必须重新核对配置，不能靠增加跳数解决；旧配置变化时会保守退回较近的地址，不盲信更远的头。只调整 lom 配置，不修改或重启共享 Nginx 服务。修改前在 .ops-secrets 留下明确命名的原配置副本，持有与备份/部署共用的维护锁；不改只有运行数据库连接的 runtime.env。
+
+保留原 HTTP ip-api 免费接口。已从实际 lom-app 测试：HTTP200/success，HTTPS403/SSL unavailable；不能直接替换成 HTTPS，也未改用其他供应商。只查询显式、合法、可公网路由的 IP，不发送内网/回环/保留地址，不用服务器出口 IP 兜底。每次查询总截止1.8秒、响应最多16KiB、不跟随重定向、最多4个不同 IP 并发、滚动60秒内最多40次外部查询，并遵守 X-Rl/X-Ttl/429。成功缓存6小时，失败缓存1分钟并短暂全局退避，最多1024个条目；公开 /api/get-ip 按真实来源60次/15分钟限流，HTTP响应 no-store。
+
+定位不可用时登录仍可成功，保存检测到的 IP 和“未知地区”；前端不再先请求定位再登录。帖子、回复和文章仍采用成员最后登录地区，但由服务端读取，不接受提交者任意覆盖；编辑内容不改变历史地区。旧登录/地区数据不批量回填或重写，新规则从下次登录/创建开始生效。
+
+此地区是公网出口的大致归属地，不是 GPS、身份或 VPN 检测结果。按用户要求保留的免费 HTTP 链路是明文，地区返回不具备密码学真实性；地区不能用于权限判断。查询预算、缓存和限流为当前单进程内存状态，重启会重置；多实例/大规模场景需另批替换共享限流和离线定位库。检测到的用户公网出口 IP 会发送给现有第三方 ip-api 以查询归属地，不记录查询响应原文或新增长期 IP 历史表。
+
 ## 一致备份与恢复
 
 `bash /root/minecraft/lomleague/ops/backup.sh` 获取与部署共用的锁，短暂停止**仅 lom-app**，生成 lom 的事务 SQL 备份以及上传目录/配置同一检查点，然后立即恢复应用。数据库容器不会重建。大文件备份会延长短暂停写窗口；请按业务量重新评估维护时间。

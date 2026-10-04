@@ -13,7 +13,9 @@
             size="large"
             :input-props="{ autocomplete: 'username' }"
           >
-            <template #prefix><n-icon><Person /></n-icon></template>
+            <template #prefix
+              ><n-icon><Person /></n-icon
+            ></template>
           </n-input>
         </n-form-item>
         <n-form-item path="password">
@@ -25,19 +27,13 @@
             :input-props="{ autocomplete: 'current-password' }"
             @keyup.enter="handleLogin"
           >
-            <template #prefix><n-icon><LockClosed /></n-icon></template>
+            <template #prefix
+              ><n-icon><LockClosed /></n-icon
+            ></template>
           </n-input>
         </n-form-item>
 
-        <n-button
-          type="primary"
-          block
-          size="large"
-          :loading="loading"
-          @click="handleLogin"
-        >
-          登录
-        </n-button>
+        <n-button type="primary" block size="large" :loading="loading" @click="handleLogin"> 登录 </n-button>
       </n-form>
 
       <p class="auth-switch">
@@ -54,7 +50,6 @@ import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
 import { Person, LockClosed } from '@vicons/ionicons5';
 import { userApi } from '../../api/user.js';
-import { ipApi } from '../../api/ip.js';
 import { useAuthStore } from '../../stores/authStore.js';
 
 const form = ref({ username: '', password: '' });
@@ -70,28 +65,24 @@ const rules = {
   password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
 };
 
-const fetchIpRegion = async () => {
-  try {
-    const res = await ipApi.getIpRegion();
-    return { ip: res.data.ip, region: res.data.region };
-  } catch {
-    return { ip: '', region: '' };
-  }
-};
-
 const handleLogin = async () => {
-  try { await formRef.value?.validate(); } catch { return; }
+  try {
+    await formRef.value?.validate();
+  } catch {
+    return;
+  }
   loading.value = true;
   try {
-    const { ip, region } = await fetchIpRegion();
-    const response = await userApi.login({ username: form.value.username, password: form.value.password, ip, region });
+    const response = await userApi.login({ username: form.value.username, password: form.value.password });
     authStore.setToken(response.data.token);
     await authStore.fetchUser();
     message.success('登录成功');
     router.push(route.query.redirect || '/');
   } catch (error) {
     message.error(error.response?.data?.message || '登录失败，请检查用户名和密码');
-  } finally { loading.value = false; }
+  } finally {
+    loading.value = false;
+  }
 };
 </script>
 
@@ -113,15 +104,16 @@ const handleLogin = async () => {
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 40px 32px;
-  animation: fadeIn .5s cubic-bezier(.22,.61,.36,1) both;
+  animation: fadeIn 0.5s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 .auth-logo {
-  width: 56px; height: 56px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   display: block;
   margin: 0 auto 16px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.25);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
 }
 
 .auth-title {

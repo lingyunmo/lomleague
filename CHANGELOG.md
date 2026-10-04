@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.22 — 2026-10-05
+
+- Derive login IP and limiter keys from the same explicitly trusted proxy chain; ignore client-submitted login IP/region and arbitrary real-IP/CDN headers. Strictly normalize IPv4/mapped IPv6/IPv6 and exclude private/reserved addresses from external lookups.
+- Keep the existing HTTP ip-api after verifying production HTTP200 and HTTPS403. Add a 1.8-second total deadline, bounded responses/concurrency/cache, rolling provider budget, quota-header backoff, per-client lookup limits and no-store. Lookup failure retains the detected IP with unknown region, never the server outbound IP.
+- Send login credentials directly without a preliminary location request. Preserve last-login-region display semantics with server-side content-region reads and protect historical regions during edits. No schema, historical-data, upload/UTF-8, filename or theme changes.
+- Add actual HTTP anti-spoofing/limiter tests, isolated MySQL login/content checks, provider boundary regressions and actual frontend login tests. All checks remain background-only with no computer use.
+- Scope production proxy trust to the observed Nginx Proxy Manager address and verified Cloudflare CIDRs. Preserve the prior lom environment configuration and restrict its previously world-writable permissions to root only; shared proxy and database services are unchanged.
+
 ## 2.0.21 — 2026-10-05
 
 - Restore the existing six-color palette and global glass controls across the modern homepage, archive cards, profile and coordinate/material tools. Remove fixed portal greens and opaque card overrides; keep saved theme/mode/glass keys and original neutral dark backgrounds.

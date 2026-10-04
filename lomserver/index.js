@@ -18,9 +18,8 @@ import morgan from 'morgan';
 import config from './utils/config.js';
 import helmet from 'helmet';
 import compression from 'compression';
-import rateLimit from 'express-rate-limit';
+import rateLimit, { ipKeyGenerator } from 'express-rate-limit';
 import { v4 as uuidv4 } from 'uuid';
-import axios from 'axios';
 import logger from './utils/logger.js';
 import errorHandler from './middleware/errorHandler.js';
 import { createUploadStatic } from './middleware/uploadStatic.js';
@@ -34,8 +33,12 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import { getServerStatus } from './services/serverStatusService.js';
 import packageInfo from './package.json' with { type: 'json' };
 import prisma from './dao/prismaClient.js';
+import { createProxyTrust, getClientIp } from './utils/clientIp.js';
+import { getIpLocation } from './services/ipLocationService.js';
 
 const app = express();
+app.set('trust proxy', createProxyTrust(process.env.TRUSTED_PROXY_CIDRS || ''));
+const ipLimitKey = (req) => ipKeyGenerator(getClientIp(req) || 'unknown');
 
 // ==================== 基础中间件 ====================
 
@@ -75,6 +78,7 @@ app.use(express.json({ limit: '10mb' }));
 // ==================== 限流 ====================
 
 const globalLimiter = rateLimit({
+  keyGenerator: ipLimitKey,
   windowMs: 15 * 60 * 1000,
   max: 2000,
   standardHeaders: true,
@@ -84,6 +88,7 @@ const globalLimiter = rateLimit({
 app.use('/api', globalLimiter);
 
 const authLimiter = rateLimit({
+  keyGenerator: ipLimitKey,
   windowMs: 15 * 60 * 1000,
   max: 30,
   standardHeaders: true,
@@ -94,6 +99,7 @@ app.use('/api/user/login', authLimiter);
 app.use('/api/user/register', authLimiter);
 
 const likeLimiter = rateLimit({
+  keyGenerator: ipLimitKey,
   windowMs: 15 * 60 * 1000,
   max: 500,
   standardHeaders: true,
@@ -131,49 +137,19 @@ app.use('/api/notifications', notificationRoutes);
 // 静态文件 — 上传目录
 app.use('/api/upload', createUploadStatic(path.join(process.cwd(), 'upload')));
 
-// IP 定位
+// IP 定位使用与限流相同的可信地址；HTTP 响应不得共享缓存。
+const locationLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 60,
+  keyGenerator: ipLimitKey,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: '地区查询过于频繁，请稍后再试' },
+});
+app.use('/api/get-ip', locationLimiter);
 app.get('/api/get-ip', async (req, res) => {
-  let userIp = (req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress)
-    .split(',')[0]
-    .trim();
-
-  userIp = userIp.replace(/^::ffff:/i, '');
-
-  const isPrivateIp =
-    /^(::1|127\.0\.0\.1|0\.0\.0\.0|localhost|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})$/i.test(
-      userIp,
-    );
-
-  try {
-    let ipData;
-    if (isPrivateIp) {
-      try {
-        const proxyResponse = await axios.get('http://ip-api.com/json/?lang=zh-CN');
-        ipData = proxyResponse.data;
-      } catch {
-        const directResponse = await axios.get('http://ip-api.com/json/?lang=zh-CN', {
-          proxy: false,
-        });
-        ipData = directResponse.data;
-      }
-    } else {
-      const response = await axios.get(`http://ip-api.com/json/${userIp}?lang=zh-CN`, {
-        proxy: false,
-      });
-      ipData = response.data;
-    }
-
-    if (ipData && ipData.status !== 'fail' && ipData.country) {
-      const parts = [ipData.country, ipData.regionName, ipData.city].filter(Boolean);
-      const region = parts.length > 0 ? parts.join(' ') : '未知地区';
-      res.json({ ip: isPrivateIp ? ipData.query || userIp : userIp, region });
-    } else {
-      res.json({ ip: isPrivateIp ? ipData?.query || userIp : userIp, region: '未知地区' });
-    }
-  } catch (error) {
-    logger.error('IP 定位失败', { error: error.message, requestId: req.id });
-    res.json({ ip: userIp, region: '未知地区' });
-  }
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(await getIpLocation(getClientIp(req)));
 });
 
 // ==================== 前端静态文件服务（Issue #18: 单进程部署） ====================

@@ -10,6 +10,12 @@ class UserDao {
     return prisma.user.findUnique({ where: { id: userId } });
   }
 
+  static async getLoginRegion(userId) {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { last_login_region: true } });
+    const region = user?.last_login_region?.region;
+    return typeof region === 'string' && region.trim() && Array.from(region).length <= 191 ? region : '未知地区';
+  }
+
   static async getRecentActivity(userId) {
     const [posts, replies] = await Promise.all([
       prisma.forumPost.findMany({

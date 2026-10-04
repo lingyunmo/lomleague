@@ -12,6 +12,7 @@ import UserDao from '../dao/UserDao.js';
 import prisma from '../dao/prismaClient.js';
 import { getUserFrame } from '../utils/userFrame.js';
 import { avatarSchema } from '../utils/attachmentSchema.js';
+import { getClientIp } from '../utils/clientIp.js';
 
 const router = express.Router();
 
@@ -27,8 +28,6 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   username: z.string().min(1),
   password: z.string().min(1),
-  ip: z.string().optional(),
-  region: z.string().optional(),
 });
 
 const updateUserSchema = z
@@ -64,8 +63,8 @@ router.post(
   '/login',
   validate(loginSchema),
   asyncHandler(async (req, res) => {
-    const { username, password, ip, region } = req.body;
-    const result = await UserService.login(username, password, ip, region);
+    const { username, password } = req.body;
+    const result = await UserService.login(username, password, getClientIp(req));
     res.status(200).json({ token: result.token });
   }),
 );

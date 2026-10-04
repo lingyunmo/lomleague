@@ -63,18 +63,42 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     expect(result.data).not.toHaveProperty('password');
     expect(result.cacheControl).toBe('no-store');
   });
+  it('persists the actual local login address and ignores posted IP/region and untrusted headers', async () => {
+    const response = await fetch(baseUrl + '/api/user/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': '8.8.8.8', 'X-Real-IP': '1.1.1.1' },
+      body: JSON.stringify({
+        username: alice.username,
+        password: 'local-test-password',
+        ip: '9.9.9.9',
+        region: '伪造地区',
+      }),
+    });
+    expect(response.status).toBe(200);
+    const profile = await request('/user/me', { token: alice.token });
+    expect(profile.data.lastLoginRegion).toEqual({ ip: '127.0.0.1', region: '未知地区' });
+    expect((await prisma.user.findUnique({ where: { id: alice.id } })).last_login_region).toEqual(
+      profile.data.lastLoginRegion,
+    );
+    const location = await request('/get-ip');
+    expect(location.data).toEqual({ ip: '127.0.0.1', region: '未知地区' });
+    expect(location.cacheControl).toBe('no-store');
+  });
   it('retains Chinese, emoji and literal percent sequences in persisted posts', async () => {
     const title = '中文世界🧱 100% %E4%B8%AD';
     const created = await request('/forum/posts', {
       method: 'POST',
       token: alice.token,
-      body: { title, content: '# 旧 Markdown\n\n**保留** 世界🧱 100%' },
+      body: { title, content: '# 旧 Markdown\n\n**保留** 世界🧱 100%', region: '伪造发帖地区' },
     });
     expect(created.status).toBe(201);
     post = created.data;
+    expect(post.region).toBe('未知地区');
     const result = await request(`/forum/posts/${post.id}`);
     expect(result.data.title).toBe(title);
     expect(result.data.content).toBe(post.content);
+    await request('/forum/posts/' + post.id, { method: 'PUT', token: alice.token, body: { region: '伪造编辑地区' } });
+    expect((await request('/forum/posts/' + post.id)).data.region).toBe('未知地区');
     const list = await request(`/forum/posts?keyword=${encodeURIComponent(title)}`);
     expect(list.data.posts.some((item) => item.id === post.id)).toBe(true);
   });
