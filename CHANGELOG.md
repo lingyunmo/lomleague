@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.11 — 2026-10-04
+
+- Prevent late initial like reads from overwriting successful toggles. Reload when the entity or login session changes, ignore stale/unmounted results and errors, and preserve overlapping-click protection and existing like rules.
+- Restore search, pagination and scroll through detail-page return buttons when the previous route is the matching list. Direct links and unrelated/external history use the ordinary local list fallback; no extra filename or navigation-state mapping is added.
+- Give appearance switches explicit accessible names. Use keyboard-operable color buttons with pressed state, visible focus and 44px targets, and respect reduced-motion preferences.
+- Add focused state-race, safe-navigation and actual switch-semantics regressions. No database schema, reward, upload or filename changes.
+
 ## 2.0.10 — 2026-10-04
 
 - Fix avatar frames that never updated after a response slower than 100ms. Apply the actual asynchronous result, with guards for member changes and component unmounting.

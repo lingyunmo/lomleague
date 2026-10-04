@@ -86,6 +86,7 @@ import { articleApi } from '../../api/article.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { formatDate } from '../../utils/date.js';
 import { parseAttachments } from '../../utils/attachment.js';
+import { returnToList } from '../../utils/returnToList.js';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import LikeButton from '../LikeButton.vue';
 import UserFrame from '../UserFrame.vue';
@@ -138,7 +139,7 @@ const fetchArticle = async () => {
 
 // 返回全部文章
 const goBack = () => {
-  router.push({ name: 'Articles' });
+  returnToList(router, '/articles');
 };
 
 // 复制链接

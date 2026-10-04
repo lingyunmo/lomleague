@@ -169,6 +169,7 @@ import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { formatDate } from '../../utils/date.js';
 import { parseAttachments } from '../../utils/attachment.js';
+import { returnToList } from '../../utils/returnToList.js';
 import Pagination from '../Pagination.vue';
 import AttachmentGrid from '../AttachmentGrid.vue';
 import AddPost from './AddPost.vue';
@@ -295,7 +296,7 @@ const confirmDeleteReply = (replyId) => {
 };
 
 // ==================== 导航 ====================
-const goBack = () => router.push({ name: 'Forums' });
+const goBack = () => returnToList(router, '/forums');
 const openNewReply = () => {
   showReplyModal.value = true;
 };

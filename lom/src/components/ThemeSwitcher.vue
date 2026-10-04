@@ -19,12 +19,10 @@
         <!-- 亮色 / 暗色 -->
         <div class="theme-section">
           <div class="theme-label">
-            <n-icon size="16"
-              ><n-icon><Sunny v-if="darkMode" /></n-icon
-            ></n-icon>
+            <n-icon size="16"><Moon v-if="darkMode" /><Sunny v-else /></n-icon>
             {{ darkMode ? '暗色模式' : '亮色模式' }}
           </div>
-          <n-switch :value="darkMode" @update:value="setDarkMode" size="small">
+          <n-switch aria-label="暗色模式" :value="darkMode" @update:value="setDarkMode" size="small">
             <template #checked-icon
               ><n-icon size="14"><Moon /></n-icon
             ></template>
@@ -38,24 +36,27 @@
         <div class="theme-section">
           <div class="theme-label">主色调</div>
           <div class="color-dots">
-            <div
+            <button
               v-for="(t, key) in presets"
               :key="key"
+              type="button"
               class="color-dot"
               :class="{ active: currentKey === key }"
               :style="{ background: t.primary }"
               :title="t.name"
+              :aria-label="`${t.name}色主题`"
+              :aria-pressed="currentKey === key"
               @click="setTheme(key)"
             >
               <n-icon v-if="currentKey === key" size="14" color="#fff"><Checkmark /></n-icon>
-            </div>
+            </button>
           </div>
         </div>
 
         <!-- 玻璃效果开关 -->
         <div class="theme-section">
           <div class="theme-label">玻璃拟态</div>
-          <n-switch :value="glassEnabled" @update:value="setGlass" size="small" />
+          <n-switch aria-label="玻璃拟态" :value="glassEnabled" @update:value="setGlass" size="small" />
         </div>
       </div>
     </n-popover>
@@ -103,13 +104,15 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
 }
 
 .color-dots {
-  display: flex;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(3, 44px);
+  gap: 6px;
 }
 
 .color-dot {
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
+  padding: 0;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -126,8 +129,13 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
 }
 
 .color-dot.active {
-  border-color: #fff;
-  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+  border-color: var(--color-text-primary);
+  box-shadow: 0 0 0 2px var(--color-bg-dark);
+}
+
+.color-dot:focus-visible {
+  outline: 3px solid var(--color-portal-accent);
+  outline-offset: 3px;
 }
 
 .theme-trigger {
@@ -142,5 +150,12 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
 .theme-trigger:hover {
   transform: scale(1.12);
   box-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .color-dot,
+  .theme-trigger {
+    transition: none;
+  }
 }
 </style>

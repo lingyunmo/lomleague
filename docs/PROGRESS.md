@@ -9,15 +9,22 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.10 (not yet released)
+## Working batch: 2.0.11 (not yet released)
+
+- Version 2.0.10 is released: GitHub-verified commit f4ed26754e93a7a03292a63b6301345b77e3fb89, successful Actions run 37181627235 and matching live health/footer. The actual successful workflow summary, Verified badge and live footer were checked in the browser.
+- Two like-button regressions failed against the previous code: late initial reads overwrote a completed toggle, and logout without remounting retained the previous member's liked state. Guard entity/session/request identity, invalidate on unmount and reload after an unsuccessful toggle; existing business rules and duplicate-click protection remain unchanged.
+- Detail-page return buttons use the previous matching list route to restore URL search/page/size and scroll. Direct links or unrelated history fall back to the local list, never an external destination.
+- Appearance controls have named switches and native keyboard color buttons with pressed state, visible focus and 44px targets. Preset values and preference persistence are unchanged.
+- Twenty-eight targeted regressions passed, including actual Naive UI switch semantics. Full checks passed: 240 tests (99 backend, 141 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.11.
+- Production-build browser acceptance passed: search/page two/ten-per-page are restored by the detail return button; direct-link return falls back to the default forum; timestamp/Unicode/percent attachment labels remain exact. Enter selects a color, Space toggles the named dark-mode switch, and all color targets measure 44px. The 390px light layout and open popover have no horizontal overflow. Original local preferences and temporary viewport overrides were restored. Screenshot: lomleague-2.0.11-mobile-appearance.jpg in the task output directory.
+
+## Previous release batches
 
 - Version 2.0.9 is released: GitHub-verified commit 9a4f3f5fe0c98a897cefb6fbd3c7d080981ecf36, successful Actions run 37181064006 and matching live health/footer. The actual Verified badge and new public community page with both original posts were checked in the browser. Screenshot: lomleague-2.0.9-community.jpg in the task output directory.
 - Two avatar-frame regressions failed against the previous code: a response arriving after the 100ms recheck never updated the frame, and three component instances made three separate requests instead of one deduplicated batch.
 - Module-shared public batching and awaited reactive updates fix both issues. Requests stay within the existing 100-member limit; valid frames are cached for 20 seconds with at most 500 entries. Failed/malformed responses are not cached, and canceled/older responses cannot overwrite current state or a newer cache generation. Backend achievement/frame criteria remain unchanged.
 - Sixteen targeted regressions passed. Full checks passed: 212 tests (99 backend, 113 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.10.
-- Browser network validation on the built local page recorded exactly one public frame request for twenty cards, containing nineteen distinct member ids. Backend criteria, database schema and upload files are unchanged; the temporary network observer was disabled after validation. This batch is not released until Actions and live revision checks succeed.
-
-## Previous release batches
+- Browser network validation on the built local page recorded exactly one public frame request for twenty cards, containing nineteen distinct member ids. Backend criteria, database schema and upload files are unchanged; the temporary network observer was disabled after validation. Release confirmation is recorded above.
 
 - Version 2.0.8 is released: GitHub-verified commit c978be7db85caff4748f36067358998dead97aae, successful Actions run 37179993982 and matching live health/footer. The actual green Verified badge was checked in the browser; the new Node 24 actions passed real CI/container deployment. Screenshot: lomleague-2.0.8-homepage.jpg in the task output directory.
 - Community and announcement lists share a responsive, theme-aware editorial shell and entries. Detail navigation is now a real link, with separate actions and unchanged permissions.
@@ -71,7 +78,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 85206 at port 3000, test DB port 13306, revision `local-preview-v2.0.10`. The actual read-only smoke script passed against it. The previous owned process session 88007 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
+- Backend preview process session 79570 at port 3000, test DB port 13306, revision `local-preview-v2.0.11`. The actual read-only smoke script passed against it. The previous owned process session 85206 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
 - Production Vite preview session 44856 at `http://127.0.0.1:4173`. Previous owned session 5574 exited; its port was confirmed free before restart.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.
