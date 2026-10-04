@@ -1,11 +1,17 @@
 packages:
-  - "lom"
-  - "lomserver"
+  - 'lom'
+  - 'lomserver'
+
+overrides:
+  'deepmerge-ts@<8.0.0': '^8.0.0'
+
+allowBuilds:
+  core-js: false
 
 pnpm:
   onlyBuiltDependencies:
-    - "@prisma/client"
-    - "@prisma/engines"
+    - '@prisma/client'
+    - '@prisma/engines'
     - esbuild
     - prisma
     - bcrypt

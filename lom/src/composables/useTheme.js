@@ -6,43 +6,43 @@ import { ref, reactive } from 'vue';
 
 // ---- 6 套完整配色 ----
 export const PRESETS = {
-  blue:   { name: '蓝',   primary: '#007aff', hover: '#0066d6', secondary: '#5e5ce6', rgb: '0,122,255' },
-  mint:   { name: '绿',   primary: '#34c759', hover: '#2db14e', secondary: '#30b0c7', rgb: '52,199,89' },
-  gold:   { name: '金',   primary: '#d4a843', hover: '#b89030', secondary: '#c97a2e', rgb: '212,168,67' },
-  rose:   { name: '粉',   primary: '#ff375f', hover: '#e03050', secondary: '#e8547c', rgb: '255,55,95' },
-  violet: { name: '紫',   primary: '#af52de', hover: '#9545c0', secondary: '#7b61ff', rgb: '175,82,222' },
-  slate:  { name: '石墨', primary: '#8e8e93', hover: '#707075', secondary: '#636366', rgb: '142,142,147' },
+  blue: { name: '蓝', primary: '#007aff', hover: '#0066d6', secondary: '#5e5ce6', rgb: '0,122,255' },
+  mint: { name: '绿', primary: '#34c759', hover: '#2db14e', secondary: '#30b0c7', rgb: '52,199,89' },
+  gold: { name: '金', primary: '#d4a843', hover: '#b89030', secondary: '#c97a2e', rgb: '212,168,67' },
+  rose: { name: '粉', primary: '#ff375f', hover: '#e03050', secondary: '#e8547c', rgb: '255,55,95' },
+  violet: { name: '紫', primary: '#af52de', hover: '#9545c0', secondary: '#7b61ff', rgb: '175,82,222' },
+  slate: { name: '石墨', primary: '#8e8e93', hover: '#707075', secondary: '#636366', rgb: '142,142,147' },
 };
 
 // ---- 暗色 ----
 const DARK = {
-  bodyBg:       '#000000',
-  navbarBg:     'rgba(0,0,0,.84)',
-  footerBg:     '#0d0d0d',
-  textPrimary:  'rgba(255,255,255,.92)',
-  textSecondary:'rgba(255,255,255,.72)',
-  textMuted:    'rgba(255,255,255,.56)',
-  textSubtle:   'rgba(255,255,255,.32)',
-  textLabel:    'rgba(255,255,255,.64)',
+  bodyBg: '#11140f',
+  navbarBg: 'rgba(17,20,15,.9)',
+  footerBg: '#11140f',
+  textPrimary: 'rgba(255,255,255,.92)',
+  textSecondary: 'rgba(255,255,255,.72)',
+  textMuted: 'rgba(255,255,255,.56)',
+  textSubtle: 'rgba(255,255,255,.32)',
+  textLabel: 'rgba(255,255,255,.64)',
   shadowSubtle: '0 0 0 .5px rgba(255,255,255,.08)',
   shadowMedium: '0 1px 3px rgba(0,0,0,.4), 0 0 0 .5px rgba(255,255,255,.06)',
-  shadowDeep:   '0 4px 16px rgba(0,0,0,.5)',
+  shadowDeep: '0 4px 16px rgba(0,0,0,.5)',
   shadowAvatar: '0 2px 8px rgba(0,0,0,.6)',
 };
 
 // ---- 亮色 ----
 const LIGHT = {
-  bodyBg:       '#f5f5f7',
-  navbarBg:     'rgba(245,245,247,.84)',
-  footerBg:     '#e8e8ed',
-  textPrimary:  'rgba(0,0,0,.88)',
-  textSecondary:'rgba(0,0,0,.64)',
-  textMuted:    'rgba(0,0,0,.48)',
-  textSubtle:   'rgba(0,0,0,.24)',
-  textLabel:    'rgba(0,0,0,.56)',
+  bodyBg: '#f5f5f7',
+  navbarBg: 'rgba(245,245,247,.84)',
+  footerBg: '#e8e8ed',
+  textPrimary: 'rgba(0,0,0,.88)',
+  textSecondary: 'rgba(0,0,0,.64)',
+  textMuted: 'rgba(0,0,0,.48)',
+  textSubtle: 'rgba(0,0,0,.24)',
+  textLabel: 'rgba(0,0,0,.56)',
   shadowSubtle: '0 0 0 .5px rgba(0,0,0,.04)',
   shadowMedium: '0 1px 3px rgba(0,0,0,.06), 0 0 0 .5px rgba(0,0,0,.04)',
-  shadowDeep:   '0 4px 16px rgba(0,0,0,.08)',
+  shadowDeep: '0 4px 16px rgba(0,0,0,.08)',
   shadowAvatar: '0 2px 8px rgba(0,0,0,.1)',
 };
 
@@ -61,6 +61,7 @@ function applyAll() {
   const mode = darkMode.value ? DARK : LIGHT;
   const glass = glassEnabled.value;
   const root = document.documentElement;
+  root.style.setProperty('--color-portal-accent', darkMode.value ? '#b8e780' : '#426924');
 
   // 品牌色
   root.style.setProperty('--color-brand-primary', t.primary);
@@ -125,10 +126,24 @@ function applyAll() {
   };
 }
 
-function setTheme(key) { currentKey.value = key; localStorage.setItem('lom-theme', key); applyAll(); }
-function setDarkMode(val) { darkMode.value = val; localStorage.setItem('lom-dark', val ? '1' : '0'); applyAll(); }
-function toggleDarkMode() { setDarkMode(!darkMode.value); }
-function setGlass(val) { glassEnabled.value = val; localStorage.setItem('lom-glass', val ? '1' : '0'); applyAll(); }
+function setTheme(key) {
+  currentKey.value = key;
+  localStorage.setItem('lom-theme', key);
+  applyAll();
+}
+function setDarkMode(val) {
+  darkMode.value = val;
+  localStorage.setItem('lom-dark', val ? '1' : '0');
+  applyAll();
+}
+function toggleDarkMode() {
+  setDarkMode(!darkMode.value);
+}
+function setGlass(val) {
+  glassEnabled.value = val;
+  localStorage.setItem('lom-glass', val ? '1' : '0');
+  applyAll();
+}
 
 function init() {
   if (initialized) return;
@@ -143,7 +158,17 @@ function init() {
 }
 
 export function useTheme() {
-  return { presets: PRESETS, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, toggleDarkMode, setGlass, init };
+  return {
+    presets: PRESETS,
+    currentKey,
+    darkMode,
+    glassEnabled,
+    setTheme,
+    setDarkMode,
+    toggleDarkMode,
+    setGlass,
+    init,
+  };
 }
 
 export { init as initTheme };

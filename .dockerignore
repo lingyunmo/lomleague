@@ -1,0 +1,13 @@
+**/node_modules
+**/.env
+**/.env.*
+.git
+.idea
+.claude
+**/upload
+**/logs
+**/dist
+lomserver/public
+mysql_data
+docs
+*.log

@@ -9,22 +9,26 @@ import { isTokenExpired } from './utils.js';
 
 const client = axios.create({
   baseURL: '/api',
+  timeout: 15000,
 });
 
 // ==================== 请求拦截器 ====================
 
-client.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    if (isTokenExpired(token)) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-    } else {
-      config.headers.Authorization = `Bearer ${token}`;
+client.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      if (isTokenExpired(token)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } else {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
-  }
-  return config;
-}, (error) => Promise.reject(error));
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
 
 // ==================== 响应拦截器 ====================
 

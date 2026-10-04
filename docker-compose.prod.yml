@@ -14,13 +14,13 @@ services:
     networks:
       - common-net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
       interval: 10s
       timeout: 5s
       retries: 5
 
   app:
-    image: ghcr.io/${GH_USER}/lomleague:latest
+    image: ghcr.io/${GH_USER}/lomleague:${APP_IMAGE_TAG:-latest}
     container_name: lom-app
     restart: unless-stopped
     volumes:
@@ -35,7 +35,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-
 
 networks:
   common-net:

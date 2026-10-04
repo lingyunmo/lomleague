@@ -1,26 +1,27 @@
-# lom 联盟 · 多阶段 Docker 构建
-
-# ---- 阶段 1: 前端 ----
-FROM node:22-alpine AS frontend-builder
-RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
-WORKDIR /app/lom
-COPY lom/package.json lom/pnpm-lock.yaml lom/pnpm-workspace.yaml ./
+# One workspace lockfile for local builds, CI and production.
+FROM node:24-alpine AS builder
+RUN apk add --no-cache openssl
+RUN npm install --global pnpm@11.1.3
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY lom/package.json ./lom/package.json
+COPY lomserver/package.json ./lomserver/package.json
 RUN pnpm install --frozen-lockfile --ignore-scripts
-COPY lom/ ./
-RUN pnpm build
+COPY lom/ ./lom/
+COPY lomserver/ ./lomserver/
+RUN pnpm --filter lomserver exec prisma generate && pnpm build
 
-# ---- 阶段 2: 后端 ----
-FROM node:22-alpine
-RUN corepack enable && corepack prepare pnpm@11.1.3 --activate
+FROM node:24-alpine AS runtime
+RUN apk add --no-cache openssl
+RUN npm install --global pnpm@11.1.3
+WORKDIR /app
+COPY --from=builder /app/package.json /app/pnpm-workspace.yaml ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/lomserver ./lomserver
+COPY --from=builder /app/lom/dist ./lomserver/public
 WORKDIR /app/lomserver
-
-COPY lomserver/package.json lomserver/pnpm-lock.yaml lomserver/pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile --ignore-scripts
-
-COPY lomserver/ ./
-RUN npx prisma generate
-
-COPY --from=frontend-builder /app/lom/dist ./public
-
+ARG APP_REVISION=local
+ENV NODE_ENV=production APP_REVISION=$APP_REVISION
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy && node index.js"]
+HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=6 CMD node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"
+CMD ["sh", "-c", "pnpm exec prisma migrate deploy && node index.js"]

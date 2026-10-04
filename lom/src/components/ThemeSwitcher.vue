@@ -2,7 +2,13 @@
   <div class="theme-switcher">
     <n-popover trigger="click" placement="top-end" :width="290">
       <template #trigger>
-        <n-button class="theme-trigger" circle size="large" :style="{ background: `var(--color-brand-primary)` }">
+        <n-button
+          class="theme-trigger"
+          aria-label="外观设置"
+          circle
+          size="large"
+          :style="{ background: `var(--color-brand-primary)` }"
+        >
           <template #icon>
             <n-icon size="22"><ColorPalette /></n-icon>
           </template>
@@ -13,12 +19,18 @@
         <!-- 亮色 / 暗色 -->
         <div class="theme-section">
           <div class="theme-label">
-            <n-icon size="16"><n-icon><Sunny v-if="darkMode" /></n-icon></n-icon>
+            <n-icon size="16"
+              ><n-icon><Sunny v-if="darkMode" /></n-icon
+            ></n-icon>
             {{ darkMode ? '暗色模式' : '亮色模式' }}
           </div>
           <n-switch :value="darkMode" @update:value="setDarkMode" size="small">
-            <template #checked-icon><n-icon size="14"><Moon /></n-icon></template>
-            <template #unchecked-icon><n-icon size="14"><Sunny /></n-icon></template>
+            <template #checked-icon
+              ><n-icon size="14"><Moon /></n-icon
+            ></template>
+            <template #unchecked-icon
+              ><n-icon size="14"><Sunny /></n-icon
+            ></template>
           </n-switch>
         </div>
 
@@ -69,7 +81,6 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
   z-index: 1000;
 }
 
-
 .theme-panel {
   display: flex;
   flex-direction: column;
@@ -105,7 +116,9 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
   align-items: center;
   justify-content: center;
   border: 2px solid transparent;
-  transition: transform .15s ease, border-color .15s ease;
+  transition:
+    transform 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .color-dot:hover {
@@ -114,18 +127,20 @@ const { presets, currentKey, darkMode, glassEnabled, setTheme, setDarkMode, setG
 
 .color-dot.active {
   border-color: #fff;
-  box-shadow: 0 0 8px rgba(255,255,255,.3);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
 
 .theme-trigger {
-  box-shadow: 0 4px 20px rgba(0,0,0,.5);
-  transition: transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+  transition:
+    transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.3s ease;
   width: 52px !important;
   height: 52px !important;
 }
 
 .theme-trigger:hover {
   transform: scale(1.12);
-  box-shadow: 0 6px 28px rgba(0,0,0,.6);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
 }
 </style>

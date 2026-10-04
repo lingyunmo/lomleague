@@ -1,30 +1,40 @@
 <template>
   <n-layout-header class="navbar">
     <div class="navbar-container">
-      <div class="navbar-logo" @click="router.push({ name: 'Main' })">
+      <router-link to="/" class="navbar-logo" aria-label="lom 联盟首页">
         <img src="/logo.jpg" alt="lom Logo" class="logo-image" />
         <span>lom 联盟</span>
-      </div>
+      </router-link>
 
-      <div class="navbar-links">
+      <button
+        class="mobile-menu"
+        type="button"
+        :aria-expanded="menuOpen"
+        aria-controls="main-navigation"
+        @click="menuOpen = !menuOpen"
+      >
+        {{ menuOpen ? '关闭 ×' : '菜单 ☰' }}
+      </button>
+
+      <nav id="main-navigation" class="navbar-links" :class="{ 'menu-open': menuOpen }" aria-label="主导航">
         <!-- 主要导航 -->
         <n-button quaternary @click="router.push({ name: 'Main' })">
           <template #icon>
-            <n-icon><Home/></n-icon>
+            <n-icon><Home /></n-icon>
           </template>
           首页
         </n-button>
 
         <n-button quaternary @click="router.push({ name: 'Articles' })">
           <template #icon>
-            <n-icon><Book/></n-icon>
+            <n-icon><Book /></n-icon>
           </template>
           联盟公告
         </n-button>
 
         <n-button quaternary @click="router.push({ name: 'Forums' })">
           <template #icon>
-            <n-icon><Chatbubbles/></n-icon>
+            <n-icon><Chatbubbles /></n-icon>
           </template>
           社区论坛
         </n-button>
@@ -38,21 +48,21 @@
 
         <n-button quaternary @click="router.push({ name: 'About' })">
           <template #icon>
-            <n-icon><People/></n-icon>
+            <n-icon><People /></n-icon>
           </template>
           曾经的我们
         </n-button>
 
         <n-button quaternary @click="goToAnniversary">
           <template #icon>
-            <n-icon><Gift/></n-icon>
+            <n-icon><Gift /></n-icon>
           </template>
           周年庆
         </n-button>
 
         <!-- 通知铃铛（仅登录后） -->
         <n-badge v-if="authStore.token" :value="unreadCount || undefined" :max="99">
-          <n-button quaternary @click="showNotifications = true">
+          <n-button quaternary aria-label="查看通知" @click="showNotifications = true">
             <template #icon>
               <n-icon><Notifications /></n-icon>
             </template>
@@ -63,22 +73,22 @@
         <div v-if="!authStore.token" class="auth-buttons">
           <n-button quaternary @click="router.push({ name: 'Login' })">
             <template #icon>
-              <n-icon><LogIn/></n-icon>
+              <n-icon><LogIn /></n-icon>
             </template>
             登录
           </n-button>
         </div>
 
         <!-- 登录后菜单 -->
-        <n-dropdown
-            v-else
-            trigger="click"
-            :options="dropdownOptions"
-            placement="bottom-end"
-        >
+        <n-dropdown v-else trigger="click" :options="dropdownOptions" placement="bottom-end">
           <n-button quaternary>
             <div class="nav-user-avatar" :class="'frame-' + navFrame">
-              <img :src="authStore.user?.avatar || '/default-avatar.png'" class="nav-avatar-img" referrerpolicy="no-referrer" @error="e => e.target.src='/default-avatar.png'" />
+              <img
+                :src="authStore.user?.avatar || '/default-avatar.png'"
+                class="nav-avatar-img"
+                referrerpolicy="no-referrer"
+                @error="(e) => (e.target.src = '/default-avatar.png')"
+              />
             </div>
             {{ authStore.userDisplayName || '个人中心' }}
           </n-button>
@@ -86,24 +96,40 @@
 
         <!-- 通知抽屉 -->
         <NotificationDrawer v-model:show="showNotifications" />
-      </div>
+      </nav>
     </div>
   </n-layout-header>
 </template>
 
 <script setup>
-import { h, ref, computed, onMounted, onUnmounted } from 'vue';
+import { h, ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useAuthStore } from '../stores/authStore';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { NIcon, useMessage, useThemeVars } from 'naive-ui';
 import {
-  Home, Book, Chatbubbles, People, Gift, Ribbon,
-  LogIn, PersonCircle, Notifications, Settings,
+  Home,
+  Book,
+  Chatbubbles,
+  People,
+  Gift,
+  Ribbon,
+  LogIn,
+  PersonCircle,
+  Notifications,
+  Settings,
 } from '@vicons/ionicons5';
 import NotificationDrawer from './NotificationDrawer.vue';
 import { notificationApi } from '../api/notification.js';
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
+const menuOpen = ref(false);
+watch(
+  () => route.fullPath,
+  () => {
+    menuOpen.value = false;
+  },
+);
 const message = useMessage();
 const themeVars = useThemeVars();
 
@@ -116,18 +142,18 @@ const goToAnniversary = () => {
 const renderIcon = (icon) => () => h(NIcon, { color: themeVars.value.primaryColor }, () => h(icon));
 
 // 用户菜单
-const dropdownOptions = [
+const dropdownOptions = computed(() => [
   {
     label: '个人资料',
     key: 'profile',
     icon: renderIcon(PersonCircle),
-    props: { onClick: () => router.push({ name: 'Profile' }) }
+    props: { onClick: () => router.push({ name: 'Profile' }) },
   },
   {
     label: '账户设置',
     key: 'settings',
     icon: renderIcon(Settings),
-    props: { onClick: () => router.push({ name: 'EditProfile' }) }
+    props: { onClick: () => router.push({ name: 'EditProfile' }) },
   },
   {
     label: '管理后台',
@@ -147,10 +173,10 @@ const dropdownOptions = [
         authStore.logout();
         message.success('已安全退出登录');
         router.push({ name: 'Main' });
-      }
-    }
-  }
-];
+      },
+    },
+  },
+]);
 
 // 通知
 const showNotifications = ref(false);
@@ -162,7 +188,9 @@ const fetchUnreadCount = async () => {
   try {
     const res = await notificationApi.getNotifications({ page: 1, pageSize: 1 });
     unreadCount.value = res.data.unreadCount || 0;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 };
 
 onMounted(() => {
@@ -177,6 +205,9 @@ onUnmounted(() => {
 
 <style scoped>
 .navbar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   background: var(--color-navbar-bg);
   backdrop-filter: var(--glass-blur);
   border-bottom: 1px solid var(--glass-bg-inner);
@@ -194,6 +225,8 @@ onUnmounted(() => {
 }
 
 .navbar-logo {
+  text-decoration: none;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -215,14 +248,16 @@ onUnmounted(() => {
 
 .navbar-links {
   display: flex;
-  gap: 12px;
+  gap: 2px;
   align-items: center;
 
   :deep(.n-button) {
     height: 40px;
-    padding: 0 16px;
+    padding: 0 12px;
     border-radius: 8px;
-    transition: background-color 0.2s, transform 0.2s;
+    transition:
+      background-color 0.2s,
+      transform 0.2s;
 
     &:hover {
       background: var(--glass-bg);
@@ -237,18 +272,42 @@ onUnmounted(() => {
   margin-left: 16px;
 }
 
-@media (max-width: 768px) {
+.mobile-menu {
+  display: none;
+  border: 1px solid var(--glass-border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--color-text-primary);
+  padding: 8px 12px;
+  cursor: pointer;
+}
+@media (max-width: 1000px) {
+  .mobile-menu {
+    display: block;
+  }
   .navbar {
     padding: 0 16px;
   }
 
   .navbar-links {
-    gap: 6px;
+    display: none;
+    position: absolute;
+    top: 64px;
+    left: 0;
+    right: 0;
+    padding: 16px;
+    background: var(--color-bg-dark);
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+    gap: 10px;
 
     :deep(.n-button) {
       padding: 0 12px;
       font-size: 14px;
     }
+  }
+  .navbar-links.menu-open {
+    display: flex;
   }
 }
 .logo-image {
@@ -263,18 +322,32 @@ onUnmounted(() => {
   border-radius: 50%;
   padding: 2px;
 }
-.nav-user-avatar.frame-bronze { background: linear-gradient(135deg, #cd7f32, #e8b870); }
-.nav-user-avatar.frame-silver { background: linear-gradient(135deg, #a0a0a0, #d4d4d4); }
-.nav-user-avatar.frame-gold { background: linear-gradient(135deg, #d4a843, #f0d060); }
-.nav-user-avatar.frame-legend { background: linear-gradient(135deg, #af52de, #ff375f, #f0a040, #34c759); animation: navGlow 2s infinite alternate; }
+.nav-user-avatar.frame-bronze {
+  background: linear-gradient(135deg, #cd7f32, #e8b870);
+}
+.nav-user-avatar.frame-silver {
+  background: linear-gradient(135deg, #a0a0a0, #d4d4d4);
+}
+.nav-user-avatar.frame-gold {
+  background: linear-gradient(135deg, #d4a843, #f0d060);
+}
+.nav-user-avatar.frame-legend {
+  background: linear-gradient(135deg, #af52de, #ff375f, #f0a040, #34c759);
+  animation: navGlow 2s infinite alternate;
+}
 
 @keyframes navGlow {
-  from { box-shadow: 0 0 4px rgba(175,82,222,.3); }
-  to { box-shadow: 0 0 10px rgba(255,55,95,.4); }
+  from {
+    box-shadow: 0 0 4px rgba(175, 82, 222, 0.3);
+  }
+  to {
+    box-shadow: 0 0 10px rgba(255, 55, 95, 0.4);
+  }
 }
 
 .nav-avatar-img {
-  width: 24px; height: 24px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   object-fit: cover;
   display: block;

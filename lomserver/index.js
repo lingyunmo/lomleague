@@ -27,9 +27,11 @@ import errorHandler from './middleware/errorHandler.js';
 import userRoutes from './routes/userRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
 import forumRoutes from './routes/forumRoutes.js';
-import articleRoutes from './routes/ArticleRoutes.js';
+import articleRoutes from './routes/articleRoutes.js';
 import likeRoutes from './routes/likeRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import { getServerStatus } from './services/serverStatusService.js';
+import packageInfo from './package.json' with { type: 'json' };
 
 const app = express();
 
@@ -55,10 +57,12 @@ app.use(compression());
 app.use(cors(config.cors));
 
 // Helmet（XSS 防护等安全头）
-app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false, // CSP 由 Vite 构建时处理，运行时不需要
-}));
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false, // CSP 由 Vite 构建时处理，运行时不需要
+  }),
+);
 
 // Morgan dev 日志
 app.use(morgan('dev'));
@@ -99,7 +103,20 @@ app.use('/api/likes', likeLimiter);
 // ==================== API 路由 ====================
 
 app.get('/api/health', (req, res) => {
-  res.status(200).json({ message: 'Server is up and running' });
+  res.status(200).json({
+    message: 'Server is up and running',
+    version: packageInfo.version,
+    revision: process.env.APP_REVISION || null,
+  });
+});
+
+app.get('/api/server/status', async (req, res, next) => {
+  try {
+    res.setHeader('Cache-Control', 'public, max-age=30');
+    res.json(await getServerStatus());
+  } catch (error) {
+    next(error);
+  }
 });
 
 app.use('/api/user', userRoutes);
@@ -114,17 +131,16 @@ app.use('/api/upload', express.static(path.join(process.cwd(), 'upload')));
 
 // IP 定位
 app.get('/api/get-ip', async (req, res) => {
-  let userIp = (
-    req.headers['x-forwarded-for'] ||
-    req.headers['x-real-ip'] ||
-    req.connection.remoteAddress
-  )
+  let userIp = (req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || req.connection.remoteAddress)
     .split(',')[0]
     .trim();
 
   userIp = userIp.replace(/^::ffff:/i, '');
 
-  const isPrivateIp = /^(::1|127\.0\.0\.1|0\.0\.0\.0|localhost|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})$/i.test(userIp);
+  const isPrivateIp =
+    /^(::1|127\.0\.0\.1|0\.0\.0\.0|localhost|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2[0-9]|3[0-1])\.\d{1,3}\.\d{1,3})$/i.test(
+      userIp,
+    );
 
   try {
     let ipData;
@@ -148,9 +164,9 @@ app.get('/api/get-ip', async (req, res) => {
     if (ipData && ipData.status !== 'fail' && ipData.country) {
       const parts = [ipData.country, ipData.regionName, ipData.city].filter(Boolean);
       const region = parts.length > 0 ? parts.join(' ') : '未知地区';
-      res.json({ ip: isPrivateIp ? (ipData.query || userIp) : userIp, region });
+      res.json({ ip: isPrivateIp ? ipData.query || userIp : userIp, region });
     } else {
-      res.json({ ip: isPrivateIp ? (ipData?.query || userIp) : userIp, region: '未知地区' });
+      res.json({ ip: isPrivateIp ? ipData?.query || userIp : userIp, region: '未知地区' });
     }
   } catch (error) {
     logger.error('IP 定位失败', { error: error.message, requestId: req.id });
@@ -165,7 +181,7 @@ app.use(express.static(publicDir));
 
 // SPA fallback — 所有非 /api 请求返回 index.html
 app.get('*', (req, res) => {
-  if (req.path.startsWith('/api')) return; // 不应该到这里，但保留安全检查
+  if (req.path.startsWith('/api')) return res.status(404).json({ message: 'API endpoint not found' });
   res.sendFile(path.join(publicDir, 'index.html'), (err) => {
     if (err) {
       res.status(404).json({ message: 'Not Found' });
@@ -180,9 +196,14 @@ app.use(errorHandler);
 
 // ==================== 启动 ====================
 
-const port = config.port || 3000;
-app.listen(port, () => {
-  logger.info(`Server is running on http://localhost:${port}`);
-});
+export function startServer(port = config.port || 3000) {
+  return app.listen(port, () => {
+    logger.info(`Server is running on http://localhost:${port}`);
+  });
+}
+
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  startServer();
+}
 
 export default app;

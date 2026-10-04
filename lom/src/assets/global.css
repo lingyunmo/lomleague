@@ -7,12 +7,39 @@
 :root {
   --color-brand-primary: #007aff;
   --color-brand-secondary: #5e5ce6;
-  --color-navbar-bg: rgba(0,0,0,.84);
+  --color-navbar-bg: rgba(0, 0, 0, 0.84);
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  background: var(--color-bg-dark, #11140f);
+  color: var(--color-text-primary, #edf0e9);
+}
+button,
+input {
+  font: inherit;
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .loading-container {

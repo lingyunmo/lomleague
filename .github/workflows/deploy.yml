@@ -2,11 +2,15 @@ name: Test → Build → Deploy
 
 on:
   push:
-    branches: ["main"]
+    branches: ['main']
   workflow_dispatch:
 
 env:
   IMAGE: ghcr.io/${{ github.repository_owner }}/lomleague
+
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
 
 jobs:
   # ============================================
@@ -20,7 +24,7 @@ jobs:
         image: mysql:8.0
         env:
           MYSQL_ROOT_PASSWORD: testpass123
-          MYSQL_DATABASE: lom
+          MYSQL_DATABASE: lom_ci_test
         ports:
           - 3306:3306
         options: >-
@@ -30,24 +34,27 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - uses: pnpm/action-setup@v4
         with: { version: '11.1.3' }
 
-      - uses: actions/setup-node@v4
-        with: { node-version: 22, cache: 'pnpm' }
+      - uses: actions/setup-node@v7.0.0
+        with: { node-version: 24, cache: 'pnpm' }
 
-      - name: 安装依赖 & 迁移 & 测试
-        working-directory: lomserver
+      - name: 安装依赖、检查、测试和前端构建
         env:
-          DATABASE_URL: mysql://root:testpass123@localhost:3306/lom
+          DATABASE_URL: mysql://root:testpass123@localhost:3306/lom_ci_test
+          LOM_TEST_DATABASE_URL: mysql://root:testpass123@localhost:3306/lom_ci_test
           JWT_SECRET: test_secret
         run: |
-          pnpm install --ignore-scripts
-          npx prisma generate
-          npx prisma migrate deploy
-          pnpm test --passWithNoTests
+          pnpm install --frozen-lockfile --ignore-scripts
+          pnpm --filter lomserver exec prisma generate
+          # This schema setup targets ONLY the disposable CI service, never production.
+          pnpm --filter lomserver exec prisma db push --skip-generate
+          pnpm lint
+          pnpm test
+          pnpm build
 
   # ============================================
   # 阶段 2: 构建镜像 → 推送 → 部署
@@ -61,7 +68,7 @@ jobs:
       packages: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7.0.1
 
       - name: 🔐 登录 GitHub Container Registry
         uses: docker/login-action@v3
@@ -71,13 +78,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 🐳 构建 Docker 镜像
-        run: docker build -t ${{ env.IMAGE }}:latest .
+        run: docker build --build-arg APP_REVISION=${{ github.sha }} -t ${{ env.IMAGE }}:${{ github.sha }} -t ${{ env.IMAGE }}:latest .
 
       - name: 📤 推送镜像到 GHCR
-        run: docker push ${{ env.IMAGE }}:latest
+        run: |
+          docker push ${{ env.IMAGE }}:${{ github.sha }}
+          docker push ${{ env.IMAGE }}:latest
 
       - name: 📂 上传 Compose 文件到服务器
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -87,7 +96,7 @@ jobs:
           target: /root/minecraft/lomleague
 
       - name: 🖥️ SSH 部署
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
@@ -96,8 +105,31 @@ jobs:
           script: |
             set -e
             cd /root/minecraft/lomleague
+            previous_image=$(docker inspect -f '{{.Config.Image}}' lom-app 2>/dev/null || true)
+            export APP_IMAGE_TAG=${{ github.sha }}
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
             docker compose -f docker-compose.prod.yml pull app
-            docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
+            # Update only the application; never recreate MySQL or its data volume.
+            started=false
+            if docker compose -f docker-compose.prod.yml up -d --no-deps app; then
+              started=true
+            fi
+            healthy=false
+            if [ "$started" = true ]; then
+              for attempt in $(seq 1 24); do
+                if docker exec lom-app node -e "fetch('http://127.0.0.1:'+(process.env.PORT||3000)+'/api/health').then(async r=>{const d=await r.json();if(!r.ok||d.revision!=='${{ github.sha }}')process.exit(1)}).catch(()=>process.exit(1))"; then
+                  healthy=true
+                  break
+                fi
+                sleep 5
+              done
+            fi
+            if [ "$healthy" != true ]; then
+              echo "New application failed its health check. Restoring the previous application image."
+              if [ -n "$previous_image" ]; then
+                export APP_IMAGE_TAG="${previous_image##*:}"
+                docker compose -f docker-compose.prod.yml up -d --no-deps app
+              fi
+              exit 1
+            fi
             echo "✅ 部署完成"
