@@ -9,7 +9,7 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.1 (not yet released)
+## Working batch: 2.0.2 (not yet released)
 
 - New responsive homepage, code-native isometric block world, searchable film/project/member archive, preserved historical records, check-in, and real cached Minecraft status.
 - Vite 8, Vue and compatible dependency updates, Vitest 5, ESLint 10, Multer 2.4.
@@ -28,6 +28,7 @@
 - The browser production-build preview loads the real test forum post and correctly renders Chinese, Markdown, emoji and literal percent text. Synthetic-account login, reactive navigation, check-in state, editor source/preview compatibility, and light/dark homepage rendering passed. The editor's default CDN scripts were caught in browser QA and removed; all editor extension assets are local.
 - Docker Desktop daemon was unavailable; `docker desktop start` and `docker info` did not finish, and these two command sessions were stopped. Do not claim the container build has passed until actually tested.
 - Commit b784fdf (2.0.0) was signed with the existing local identity, pushed, and confirmed `verified: true` / `valid` by GitHub. Run 37168510408 rejected a Windows/Git case mismatch (`ArticleRoutes.js` in Git vs `articleRoutes.js` on disk), and deployment was skipped. The fix records a real case-only Git rename and makes the local import tests consult Git's canonical filenames as well as the filesystem.
+- Commit 5f2dc5a (2.0.1) also has a valid GitHub signature. Run 37168651373 passed the import checks but exposed missing `JWT_EXPIRATION` in the disposable CI login fixture. The fixture now explicitly stubs 3600 seconds and asserts the token lifetime, so tests no longer accidentally depend on the local ignored `.env`. Deployment was skipped; production is still unchanged.
 
 ## Current processes
 

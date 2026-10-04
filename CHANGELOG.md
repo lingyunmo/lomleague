@@ -1,5 +1,10 @@
 # Changelog
 
+## 2.0.2 — 2026-10-04
+
+- Make isolated integration authentication self-contained: explicitly supply and assert a one-hour test JWT expiry instead of accidentally relying on the local ignored `.env`.
+- CI's login simulation exposed the missing test configuration and skipped deployment again. Production credentials and expiration policy are unchanged.
+
 ## 2.0.1 — 2026-10-04
 
 - Fix a Windows/Git filename-case mismatch before deployment: Git now tracks `articleRoutes.js` exactly as imported.

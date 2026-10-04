@@ -24,6 +24,8 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     expect(register.status).toBe(201);
     const login = await request('/user/login', { method: 'POST', body: { username, password } });
     expect(login.status).toBe(200);
+    const payload = JSON.parse(Buffer.from(login.data.token.split('.')[1], 'base64url').toString('utf8'));
+    expect(payload.exp - payload.iat).toBe(3600);
     return { id: register.data.userId, username, token: login.data.token };
   }
   beforeAll(async () => {
@@ -36,6 +38,7 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     }
     vi.stubEnv('DATABASE_URL', testDatabaseUrl);
     vi.stubEnv('JWT_SECRET', 'isolated-integration-test-only');
+    vi.stubEnv('JWT_EXPIRATION', '3600');
     const appModule = await import('../index.js');
     prisma = (await import('../dao/prismaClient.js')).default;
     server = appModule.startServer(0);
