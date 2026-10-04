@@ -106,6 +106,33 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     expect((await request('/user/checkin', { method: 'POST', token: alice.token })).status).toBe(409);
     expect((await request('/user/me', { token: alice.token })).data.gold_coins).toBe(5);
   });
+  it('grants only one reward under concurrent check-in requests', async () => {
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () => request('/user/checkin', { method: 'POST', token: bob.token })),
+    );
+    expect(results.filter((result) => result.status === 200)).toHaveLength(1);
+    expect(results.filter((result) => result.status === 409)).toHaveLength(11);
+    const profile = await request('/user/me', { token: bob.token });
+    expect(profile.data.gold_coins).toBe(5);
+    expect(profile.data.checkin_streak).toBe(1);
+  });
+  it('also guards an existing persisted check-in date and retains the streak reward cap', async () => {
+    const memberWithStreak = await member('local_streak');
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    await prisma.user.update({
+      where: { id: memberWithStreak.id },
+      data: { last_checkin_date: yesterday, checkin_streak: 7, gold_coins: 10 },
+    });
+    const results = await Promise.all(
+      Array.from({ length: 12 }, () => request('/user/checkin', { method: 'POST', token: memberWithStreak.token })),
+    );
+    const successes = results.filter((result) => result.status === 200);
+    expect(successes).toHaveLength(1);
+    expect(successes[0].data).toMatchObject({ reward: 12, streak: 8, totalCoins: 22 });
+    expect(results.filter((result) => result.status === 409)).toHaveLength(11);
+    expect((await request('/user/me', { token: memberWithStreak.token })).data.gold_coins).toBe(22);
+  });
   it('protects administrator-only article creation', async () => {
     expect(
       (await request('/articles/', { method: 'POST', token: alice.token, body: { title: 'test', content: 'test' } }))

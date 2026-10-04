@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.6 — 2026-10-04
+
+- Atomically claim the existing last-check-in date before awarding coins. Concurrent requests receive the existing 409 response instead of duplicate rewards; the returned balance is read within the same transaction.
+- Preserve server-local daily boundaries, streak reset/continuation and the original 5–12 coin rewards. No new database field or migration is required.
+- A local regression first reproduced five rewards from twelve concurrent requests. The fix passed repeated real MySQL first-day and existing-date races plus business-rule and persistence tests.
+
 ## 2.0.5 — 2026-10-04
 
 - Keep the complete stored attachment filename, including its timestamp, in display labels, image descriptions and download names. Decode the URL transport layer exactly once; literal percent sequences remain literal and no filename mapping is introduced.

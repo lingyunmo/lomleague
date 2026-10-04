@@ -126,7 +126,8 @@ class UserService {
     const streakBonus = Math.min(newStreak - 1, 7);
     const reward = baseReward + streakBonus;
 
-    const updatedUser = await UserDao.updateCheckin(userId, reward, newStreak);
+    const updatedUser = await UserDao.updateCheckin(userId, reward, newStreak, lastCheckin, now);
+    if (!updatedUser) throw new ConflictError('今天已经签到过了');
     logger.info('签到成功', { userId, reward, streak: newStreak });
     return {
       reward,

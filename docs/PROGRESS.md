@@ -9,7 +9,11 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.5 (not yet released)
+## Working batch: 2.0.6 (not yet released)
+
+- Version 2.0.5 is released: GitHub-verified commit fb325af9a8d32be90b3609daf3c6e5449826bcdf, successful Actions run 37170920943, live health and footer match 2.0.5. The attachment/PDF batch did not change production schema or existing uploads.
+- Next batch fixes a reproduced check-in race: twelve concurrent local requests originally granted five rewards. A conditional update on the existing last_checkin_date and a balance read within one transaction now grant only one reward. No new field, migration, timezone or reward-rule change.
+- Three repeated real-MySQL integration runs passed both new-user and persisted-date/streak races; each 12-request race returned one success and eleven 409 conflicts. Unit regressions cover 5–12 coin rewards, streak reset/continuation and exact date guards. Full version-2.0.6 checks passed: 140 tests (89 backend, 51 frontend), lint without errors, production build, production dependency audit and actual local read-only smoke.
 
 - Version 2.0.4 is released: signed commit d663cfecb1073f888d1c2452da9924a254a858e6, successful Actions run 37170314796, live /api/health reports the matching version and revision. The redesigned homepage and existing production forum links were verified in the browser.
 - Next batch fixes attachment labels/download filenames that previously stripped the business timestamp or displayed URI escapes. URL segments alone decode once; no stored filename or database mapping changes.
@@ -41,7 +45,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 34526 at port 3000, test DB port 13306, revision `local-preview-v2.0.5`. The actual read-only smoke script passed against it. The previous owned process session 88142 was stopped. Browser production-preview login/logout correctly updates navigation/member UI; attachment fixture rendering passed.
+- Backend preview process session 97847 at port 3000, test DB port 13306, revision `local-preview-v2.0.6`. The actual read-only smoke script passed against it. The previous owned process session 34526 was stopped. Browser production-preview login/logout correctly updates navigation/member UI; attachment fixture rendering passed.
 - Production Vite preview session 5574 at `http://127.0.0.1:4173`.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.
