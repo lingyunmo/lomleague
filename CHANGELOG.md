@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.15 — 2026-10-04
+
+- Keep notification content and unread counts scoped to the current login session. Clear private state on account changes/closing, ignore stale results and stop polling on unmount; retain the original 30-second polling cadence without overlapping requests.
+- Bind API authorization synchronously to the session present when a request is initiated, instead of adopting a later login before the asynchronous interceptor runs. Preserve existing token expiry and same-session 401 handling; queue a fresh badge read when a read action finishes during an older poll.
+- Refresh the badge immediately after login and successful read operations. Load an initially open drawer, distinguish failed reads from empty notifications and provide a visible retry.
+- Use native, keyboard-operable notification buttons with visible focus, minimum 44px targets and a viewport-bounded drawer. Capture safe local destinations and suppress duplicate or stale mark-read/navigation operations.
+- Mark authenticated notification reads no-store and verify actual MySQL member separation for reads, foreign-id mark-read attempts and mark-all operations. Notification creation, ownership, existing API responses, database schema and uploads remain unchanged.
+
 ## 2.0.14 — 2026-10-04
 
 - Reload reused forum/article detail components when their route id changes. Ignore late reads and errors from previous routes, visits and unmounted components; do not fetch unrelated routes while navigating away.

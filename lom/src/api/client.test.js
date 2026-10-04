@@ -11,6 +11,38 @@ function rejectStatus(status, beforeReject = () => {}) {
 }
 describe('authentication-aware API errors', () => {
   beforeEach(() => localStorage.clear());
+  it.each(['get', 'put'])('binds a %s request to the session present when it was initiated', async (method) => {
+    const previous = jwt('previous');
+    localStorage.setItem('token', previous);
+    const client = createApiClient();
+    let sent;
+    const config = {
+      adapter: async (request) => {
+        sent = request.headers.Authorization;
+        return { status: 200, data: {}, config: request };
+      },
+    };
+    const request =
+      method === 'get'
+        ? client.get('/notifications', config)
+        : client.put('/notifications/read-all', undefined, config);
+    localStorage.setItem('token', jwt('new-session'));
+    await request;
+    expect(sent).toBe(`Bearer ${previous}`);
+  });
+  it('does not adopt a later login for a request initiated anonymously', async () => {
+    const client = createApiClient();
+    let sent;
+    const request = client.get('/health', {
+      adapter: async (config) => {
+        sent = config.headers.Authorization;
+        return { status: 200, data: {}, config };
+      },
+    });
+    localStorage.setItem('token', jwt('later'));
+    await request;
+    expect(sent).toBeUndefined();
+  });
   it.each([403, 500])('preserves login after HTTP %s', async (status) => {
     const token = jwt();
     localStorage.setItem('token', token);

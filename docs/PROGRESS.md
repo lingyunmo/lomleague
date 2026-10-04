@@ -9,15 +9,24 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.14 (not yet released)
+## Working batch: 2.0.15 (not yet released)
 
+- Three notification regressions failed before the fix: initial-open drawers never read, a previous member's late response populated the current drawer, and a failed read looked like an empty inbox. Scope requests/actions to current session and drawer generation, clear invalid private content and expose retries.
+- Keep the existing 30-second unread-count cadence, with immediate session/read refreshes and overlap/unmount guards. Native notification buttons provide keyboard actions, visible focus and minimum 44px targets; drawer width is bounded by the viewport. API entity/ownership rules are unchanged.
+- Three additional client adapter regressions reproduced queued requests adopting a later login's credentials. The existing synchronous authentication interceptor now binds credentials at request initiation, preserving expiry and same-session 401 handling. A badge refresh arriving during a slow poll is queued once and prevents an older count from winning.
+- Forty-three frontend regressions and an additional actual MySQL member-isolation integration passed. Full checks passed: 427 tests (121 backend, 306 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.15. Notification GET responses are no-store; no schema migration is needed.
+- Production-build browser acceptance passed simulated notification failure and manual retry, a 390px drawer with 342px-wide native item buttons and at least 44px targets, Enter navigation to the captured existing post, immediate badge removal after marking the remaining synthetic notification read, and actual synthetic-account logout/login. Login restored the member UI with no stale notification count. Temporary request blocking/network observation and viewport overrides were removed. Screenshot: lomleague-2.0.15-notifications-mobile.jpg in the task output directory. Release confirmation is pending.
+
+## Previous release batches
+
+### 2.0.14
+
+- Version 2.0.14 is released: GitHub-verified commit 42529ccc02325ab242aaa2708647afe02fbe1d4a, successful Actions run 37185444414 and matching live health/footer. The actual Verified badge and the original two public community posts were checked.
 - Three regressions first failed against 2.0.13: reused forum/article details retained the old id's content, and an older reply page overwrote a newer one. Scope public requests to the current named detail route and visit; latest reply requests win. No reads are dispatched for another route before unmounting.
 - Capture edit payloads and deletion identities; destroy each detail's own stale confirmation on route/session changes. Private operations have a separate generation, including token-change-and-return cases. Already-sent operations cannot be undone, but stale completions cannot update or navigate the current page. Owner/admin and backend business rules are unchanged.
 - Reply loading/errors are explicit and retryable; unknown counts are not presented as zero. Form validation, submitted replies and member-region reads are scoped to the current parent/session/component; mounted reply forms are keyed and closed forms unmount.
 - Sixty targeted regressions passed, including real Vue Router instance reuse and navigation cleanup. Full checks passed: 383 tests (120 backend, 263 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.14. The existing route-lazy invitation/PDF chunk warning remains visible, not suppressed.
 - Production-build browser acceptance passed notification-driven in-place switching from the existing local attachment post to another post, history return with automatic old-confirmation destruction, closing an unsubmitted reply draft on route change, simulated reply failure and successful manual retry, exact timestamp/Unicode/percent attachment labels, and 390px detail layout without horizontal overflow. No delete/edit/reply-creation request was sent; only one synthetic notification was marked read. Request blocking, network observation and viewport overrides were removed. Screenshot: lomleague-2.0.14-reply-error-viewport.jpg in the task output directory; the earlier top-only image does not show the error and is not a deliverable. Release confirmation is pending before signing/pushing.
-
-## Previous release batches
 
 ### 2.0.13
 
@@ -101,7 +110,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 39820 at port 3000, test DB port 13306, revision `local-preview-v2.0.14`. The actual read-only smoke script passed against it. The previous owned process session 4268 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
+- Backend preview process session 5212 at port 3000, test DB port 13306, revision `local-preview-v2.0.15`. The actual read-only smoke script passed against it. The previous owned process session 39820 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
 - Production Vite preview session 44856 at `http://127.0.0.1:4173`. Previous owned session 5574 exited; its port was confirmed free before restart.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.

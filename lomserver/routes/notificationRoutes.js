@@ -11,6 +11,7 @@ const router = express.Router();
 
 // GET / — 分页通知列表
 router.get('/', authMiddleware, asyncHandler(async (req, res) => {
+  res.set('Cache-Control', 'no-store');
   const unreadOnly = req.query.unread === 'true';
   const page = Math.max(1, parseInt(req.query.page) || 1);
   const pageSize = Math.min(50, Math.max(1, parseInt(req.query.pageSize) || 20));

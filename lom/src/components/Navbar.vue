@@ -95,14 +95,14 @@
         </n-dropdown>
 
         <!-- 通知抽屉 -->
-        <NotificationDrawer v-model:show="showNotifications" />
+        <NotificationDrawer v-model:show="showNotifications" @read="refreshUnreadCount" />
       </nav>
     </div>
   </n-layout-header>
 </template>
 
 <script setup>
-import { h, ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { h, ref, computed, watch } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useRouter, useRoute } from 'vue-router';
 import { NIcon, useMessage, useThemeVars } from 'naive-ui';
@@ -119,7 +119,7 @@ import {
   Settings,
 } from '@vicons/ionicons5';
 import NotificationDrawer from './NotificationDrawer.vue';
-import { notificationApi } from '../api/notification.js';
+import { useUnreadNotifications } from '../composables/useUnreadNotifications.js';
 const authStore = useAuthStore();
 const router = useRouter();
 const route = useRoute();
@@ -180,27 +180,14 @@ const dropdownOptions = computed(() => [
 
 // 通知
 const showNotifications = ref(false);
-const unreadCount = ref(0);
-let pollTimer = null;
-
-const fetchUnreadCount = async () => {
-  if (!authStore.token) return;
-  try {
-    const res = await notificationApi.getNotifications({ page: 1, pageSize: 1 });
-    unreadCount.value = res.data.unreadCount || 0;
-  } catch {
-    /* ignore */
-  }
-};
-
-onMounted(() => {
-  fetchUnreadCount();
-  pollTimer = setInterval(fetchUnreadCount, 30000);
-});
-
-onUnmounted(() => {
-  if (pollTimer) clearInterval(pollTimer);
-});
+const { unreadCount, refresh: refreshUnreadCount } = useUnreadNotifications(() => authStore.token);
+watch(
+  () => authStore.token,
+  () => {
+    showNotifications.value = false;
+  },
+  { flush: 'sync' },
+);
 </script>
 
 <style scoped>

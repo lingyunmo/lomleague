@@ -12,7 +12,11 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
       },
       body: body ? JSON.stringify(body) : undefined,
     });
-    return { status: response.status, data: response.status === 204 ? null : await response.json() };
+    return {
+      status: response.status,
+      data: response.status === 204 ? null : await response.json(),
+      cacheControl: response.headers.get('cache-control'),
+    };
   }
   async function member(name) {
     const username = `${name}_${Date.now()}`;
@@ -98,6 +102,22 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     const notifications = await request('/notifications/', { token: alice.token });
     expect(notifications.status).toBe(200);
     expect(notifications.data.unreadCount).toBeGreaterThan(0);
+  });
+  it('isolates member notifications and mark-read operations without retaining HTTP responses', async () => {
+    const initial = await request('/notifications/', { token: alice.token });
+    const other = await request('/notifications/', { token: bob.token });
+    expect(initial.cacheControl).toBe('no-store');
+    expect(other.cacheControl).toBe('no-store');
+    expect(initial.data.notifications.every((item) => item.userId === alice.id)).toBe(true);
+    expect(other.data.notifications.some((item) => item.userId === alice.id)).toBe(false);
+    const id = initial.data.notifications[0].id;
+    expect((await request(`/notifications/${id}/read`, { method: 'PUT', token: bob.token })).status).toBe(200);
+    const unchanged = await request('/notifications/', { token: alice.token });
+    expect(unchanged.data.unreadCount).toBe(initial.data.unreadCount);
+    expect(unchanged.data.notifications.find((item) => item.id === id).isRead).toBe(false);
+    expect((await request('/notifications/read-all', { method: 'PUT', token: alice.token })).status).toBe(200);
+    expect((await request('/notifications/', { token: alice.token })).data.unreadCount).toBe(0);
+    expect((await request('/notifications/')).status).toBe(401);
   });
   it('preserves count and member identity in real MySQL batch reads', async () => {
     const absent = 2_147_483_647;

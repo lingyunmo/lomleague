@@ -13,17 +13,21 @@ export function createApiClient({
   onSessionExpired = () => window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT)),
 } = {}) {
   const instance = axios.create({ baseURL: '/api', timeout: 15000 });
-  instance.interceptors.request.use((config) => {
-    const token = storage.getItem('token');
-    if (token) {
-      if (isTokenExpired(token)) {
-        expireSession(storage, token, onSessionExpired);
-      } else if (!/^\/?user\/(login|register)(?:\?|$)/.test(config.url || '')) {
-        config.headers.Authorization = `Bearer ${token}`;
+  instance.interceptors.request.use(
+    (config) => {
+      const token = storage.getItem('token');
+      if (token) {
+        if (isTokenExpired(token)) {
+          expireSession(storage, token, onSessionExpired);
+        } else if (!/^\/?user\/(login|register)(?:\?|$)/.test(config.url || '')) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
-    }
-    return config;
-  });
+      return config;
+    },
+    undefined,
+    { synchronous: true },
+  );
   instance.interceptors.response.use(
     (response) => response,
     (error) => {
