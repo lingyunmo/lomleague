@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.10 — 2026-10-04
+
+- Fix avatar frames that never updated after a response slower than 100ms. Apply the actual asynchronous result, with guards for member changes and component unmounting.
+- Share public frame reads across avatar instances, deduplicate member ids and respect the existing 100-member request limit. Use a bounded, short-lived cache; failures and malformed responses stay retryable.
+- Keep backend achievement/frame rules unchanged. Give decorative avatars explicit empty descriptions, defer offscreen images and prevent repeated fallback-image errors; respect reduced-motion preferences.
+- Regressions reproduced both the slow-response bug and duplicate requests before the fix. No database, upload or filename changes.
+
 ## 2.0.9 — 2026-10-04
 
 - Redesign community and announcement lists with the homepage's editorial, charcoal/lime visual language, theme-aware surfaces, responsive layouts and shared components. Preserve all existing content and author/admin permissions.

@@ -34,4 +34,9 @@ export const userApi = {
   checkin() {
     return client.post('/user/checkin');
   },
+
+  /** 公开批量头像框读取（保持现有接口） */
+  getFrames(userIds) {
+    return client.post('/user/frames', { userIds });
+  },
 };
