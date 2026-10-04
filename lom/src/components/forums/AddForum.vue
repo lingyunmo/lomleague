@@ -9,23 +9,19 @@
     </n-form-item>
 
     <n-form-item label="内容" path="content" required>
-      <v-md-editor
-          v-model="form.content"
-          placeholder="输入帖子内容（支持 Markdown 语法）..."
-          height="300px"
-      />
+      <v-md-editor v-model="form.content" placeholder="输入帖子内容（支持 Markdown 语法）..." height="300px" />
     </n-form-item>
 
     <n-form-item label="附件（可选）">
       <n-upload
-          :custom-request="customUpload"
-          accept="image/*,video/*,audio/*,.pdf,.zip"
-          list-type="text"
-          :show-upload-list="true"
-          multiple
-          :max="5"
-          :default-file-list="defaultFileList"
-          @remove="handleRemove"
+        :custom-request="customUpload"
+        accept="image/*,video/*,audio/*,.pdf,.zip"
+        list-type="text"
+        :show-upload-list="true"
+        multiple
+        :max="5"
+        :default-file-list="defaultFileList"
+        @remove="handleRemove"
       >
         <n-button>上传附件</n-button>
       </n-upload>
@@ -97,11 +93,10 @@ const handleSubmit = async () => {
     });
     message.success('帖子创建成功！');
     emit('created');
-  } catch (error) {
+  } catch {
     message.error('创建帖子失败，请稍后重试。');
   }
 };
 </script>
 
-<style scoped>
-</style>
+<style scoped></style>

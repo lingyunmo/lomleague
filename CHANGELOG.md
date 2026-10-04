@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.0.8 — 2026-10-04
+
+- Fix pagination's duplicate updates and missing page/size event arguments. Keep search filters when paging or retrying, and reset to page one when changing page size.
+- Ignore stale list responses, retain previously loaded content during a failed refresh, and distinguish loading, empty results and retryable network errors. Keep the search field mounted while loading.
+- Explain unsuccessful likes without logging raw authenticated HTTP errors; suppress overlapping toggle requests and expose the button's pressed state to assistive technology.
+- Update the existing pnpm setup and registry login actions to their current Node 24 releases. Remove unused bindings and obsolete lint suppression; lint now has zero warnings.
+- Add focused component and request-race regressions. No database schema or existing upload changes.
+
 ## 2.0.7 — 2026-10-04
 
 - Serve uploaded documents with an isolated content-security policy, no MIME sniffing and no outgoing referrer. A forged allowed MIME type can no longer make an HTML filename execute as part of the application origin.

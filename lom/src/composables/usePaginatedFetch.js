@@ -14,6 +14,8 @@ export function usePaginatedFetch(fetchFn, defaultParams = {}) {
   const total = ref(0);
   const loading = ref(false);
   const error = ref(null);
+  let requestSequence = 0;
+  let currentParams = {};
 
   const pagination = reactive({
     page: 1,
@@ -22,6 +24,8 @@ export function usePaginatedFetch(fetchFn, defaultParams = {}) {
 
   /** 执行数据获取 */
   async function fetch(extraParams = {}) {
+    currentParams = { ...currentParams, ...extraParams };
+    const requestId = ++requestSequence;
     loading.value = true;
     error.value = null;
     try {
@@ -29,17 +33,17 @@ export function usePaginatedFetch(fetchFn, defaultParams = {}) {
         page: pagination.page,
         pageSize: pagination.pageSize,
         ...defaultParams,
-        ...extraParams,
+        ...currentParams,
       });
+      if (requestId !== requestSequence) return;
       const result = response.data;
-      data.value = result.articles || result.posts || result.replies || result.notifications || [];
+      data.value = result.articles || result.posts || result.replies || result.notifications || result.items || [];
       total.value = result.total || 0;
       return result;
-    } catch (err) {
-      error.value = err;
-      console.error('数据获取失败:', err);
+    } catch {
+      if (requestId === requestSequence) error.value = '暂时无法加载内容，请稍后重试。';
     } finally {
-      loading.value = false;
+      if (requestId === requestSequence) loading.value = false;
     }
   }
 
@@ -50,7 +54,7 @@ export function usePaginatedFetch(fetchFn, defaultParams = {}) {
   }
 
   /** 切换页码/每页条数 */
-  async function onPageChange(page, pageSize) {
+  async function onPageChange(page = pagination.page, pageSize = pagination.pageSize) {
     pagination.page = page;
     pagination.pageSize = pageSize;
     await fetch();
@@ -58,6 +62,9 @@ export function usePaginatedFetch(fetchFn, defaultParams = {}) {
 
   /** 清空数据 */
   function reset() {
+    requestSequence++;
+    currentParams = {};
+    loading.value = false;
     data.value = [];
     total.value = 0;
     pagination.page = 1;

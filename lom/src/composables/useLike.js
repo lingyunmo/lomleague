@@ -11,16 +11,22 @@ import { useAuth } from './useAuth.js';
 export function useLike() {
   const { isLoggedIn } = useAuth();
   const loading = ref(false);
+  const error = ref(null);
 
   /** 切换单个实体的点赞状态 */
   async function toggleLike(entityType, entityId) {
-    if (!isLoggedIn.value) return null;
+    if (loading.value) return null;
+    error.value = null;
+    if (!isLoggedIn.value) {
+      error.value = '登录后才能点赞。';
+      return null;
+    }
     loading.value = true;
     try {
       const res = await likeApi.toggle(entityType, entityId);
       return res.data;
-    } catch (err) {
-      console.error('点赞操作失败:', err);
+    } catch {
+      error.value = '点赞失败，请稍后重试。';
       return null;
     } finally {
       loading.value = false;
@@ -65,5 +71,6 @@ export function useLike() {
     getLikeStatus,
     batchLoadStatus,
     loading,
+    error,
   };
 }

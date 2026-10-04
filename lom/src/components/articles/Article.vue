@@ -19,20 +19,16 @@
             </template>
             分享文章
           </n-button>
-          <n-button
-            v-if="authStore.isAdmin"
-            type="warning"
-            @click="startEdit"
-          >
-            <template #icon><n-icon><CreateOutline /></n-icon></template>
+          <n-button v-if="authStore.isAdmin" type="warning" @click="startEdit">
+            <template #icon
+              ><n-icon><CreateOutline /></n-icon
+            ></template>
             编辑文章
           </n-button>
-          <n-button
-            v-if="authStore.isAdmin"
-            type="error"
-            @click="confirmDeleteArticle"
-          >
-            <template #icon><n-icon><Trash /></n-icon></template>
+          <n-button v-if="authStore.isAdmin" type="error" @click="confirmDeleteArticle">
+            <template #icon
+              ><n-icon><Trash /></n-icon
+            ></template>
             删除文章
           </n-button>
         </n-space>
@@ -61,7 +57,7 @@
           <template v-if="isEditing">
             <n-input v-model:value="editForm.title" placeholder="标题" />
             <v-md-editor v-model="editForm.content" height="300px" />
-            <n-space style="margin-top:12px">
+            <n-space style="margin-top: 12px">
               <n-button type="primary" @click="saveEdit" :loading="savingEdit">保存</n-button>
               <n-button @click="isEditing = false">取消</n-button>
             </n-space>
@@ -119,8 +115,11 @@ const saveEdit = async () => {
     article.value.content = editForm.value.content;
     isEditing.value = false;
     message.success('更新成功');
-  } catch { message.error('更新失败'); }
-  finally { savingEdit.value = false; }
+  } catch {
+    message.error('更新失败');
+  } finally {
+    savingEdit.value = false;
+  }
 };
 
 // 获取文章详情
@@ -129,7 +128,7 @@ const fetchArticle = async () => {
   try {
     const response = await articleApi.getArticle(articleId);
     article.value = response.data || {};
-  } catch (error) {
+  } catch {
     message.error('获取文章失败，请稍后重试');
     await router.push('/articles');
   } finally {
@@ -244,7 +243,7 @@ onMounted(() => {
 
 /* 新增标题装饰线 */
 .article-title::after {
-  content: "";
+  content: '';
   display: block;
   width: 60px;
   height: 3px;

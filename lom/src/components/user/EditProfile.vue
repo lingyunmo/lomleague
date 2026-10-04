@@ -6,12 +6,7 @@
       <n-form :model="form" :rules="rules" ref="formRef" label-placement="left" label-width="100">
         <n-form-item label="头像" class="custom-upload-item">
           <n-upload :custom-request="customUpload" accept="image/*" :max="1" list-type="text">
-            <n-avatar
-                round
-                :size="128"
-                :src="form.avatar || '/default-avatar.png'"
-                class="profile-avatar"
-            />
+            <n-avatar round :size="128" :src="form.avatar || '/default-avatar.png'" class="profile-avatar" />
           </n-upload>
         </n-form-item>
 
@@ -24,7 +19,12 @@
         </n-form-item>
 
         <n-form-item label="登录地区">
-          <n-input v-model:value="form.lastLoginRegion.region" placeholder="自动获取地区信息" disabled class="custom-input" />
+          <n-input
+            v-model:value="form.lastLoginRegion.region"
+            placeholder="自动获取地区信息"
+            disabled
+            class="custom-input"
+          />
         </n-form-item>
 
         <n-form-item class="submit-item">
@@ -36,13 +36,32 @@
 
       <n-form :model="passwordForm" ref="pwdFormRef" label-placement="left" label-width="100">
         <n-form-item label="当前密码" path="oldPassword" :rules="[{ required: true, message: '请输入当前密码' }]">
-          <n-input v-model:value="passwordForm.oldPassword" type="password" placeholder="输入当前密码" class="custom-input" />
+          <n-input
+            v-model:value="passwordForm.oldPassword"
+            type="password"
+            placeholder="输入当前密码"
+            class="custom-input"
+          />
         </n-form-item>
         <n-form-item label="新密码" path="newPassword" :rules="[{ required: true, min: 6, message: '新密码至少6位' }]">
-          <n-input v-model:value="passwordForm.newPassword" type="password" placeholder="输入新密码（至少6位）" class="custom-input" />
+          <n-input
+            v-model:value="passwordForm.newPassword"
+            type="password"
+            placeholder="输入新密码（至少6位）"
+            class="custom-input"
+          />
         </n-form-item>
-        <n-form-item label="确认密码" path="confirmPassword" :rules="[{ required: true, message: '请确认新密码', validator: (_, v) => v === passwordForm.newPassword }]">
-          <n-input v-model:value="passwordForm.confirmPassword" type="password" placeholder="再次输入新密码" class="custom-input" />
+        <n-form-item
+          label="确认密码"
+          path="confirmPassword"
+          :rules="[{ required: true, message: '请确认新密码', validator: (_, v) => v === passwordForm.newPassword }]"
+        >
+          <n-input
+            v-model:value="passwordForm.confirmPassword"
+            type="password"
+            placeholder="再次输入新密码"
+            class="custom-input"
+          />
         </n-form-item>
         <n-form-item class="submit-item">
           <n-button type="warning" block @click="handleChangePassword" :loading="changingPassword">修改密码</n-button>
@@ -135,7 +154,7 @@ const handleSubmit = () => {
         });
         form.avatar = avatarUrl.value;
         message.success('资料更新成功');
-      } catch (error) {
+      } catch {
         message.error('更新失败，请稍后重试');
       }
     } else {

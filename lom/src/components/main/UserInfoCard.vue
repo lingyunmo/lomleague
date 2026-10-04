@@ -1,12 +1,7 @@
 ﻿<template>
   <n-card class="main-card" hoverable>
     <div class="main-header">
-      <n-avatar
-          round
-          size="large"
-          :src="user.avatar || '/default-avatar.png'"
-          class="main-avatar"
-      />
+      <n-avatar round size="large" :src="user.avatar || '/default-avatar.png'" class="main-avatar" />
       <div class="main-info">
         <h2 class="welcome-title">欢迎回来，{{ user.username || '冒险者' }}！</h2>
         <p class="welcome-subtitle">{{ serverStatus }}</p>
@@ -40,7 +35,7 @@ import axios from 'axios';
 import client from '../../api/client.js';
 
 // 定义 props
-const props = defineProps({
+defineProps({
   user: {
     type: Object,
     default: () => ({
@@ -77,10 +72,7 @@ const checkServerHealth = async () => {
 
 const fetchServerStatus = async () => {
   try {
-    const [internetStatus, serverHealthStatus] = await Promise.all([
-      checkInternet(),
-      checkServerHealth(),
-    ]);
+    const [internetStatus, serverHealthStatus] = await Promise.all([checkInternet(), checkServerHealth()]);
 
     servers.value = [
       {

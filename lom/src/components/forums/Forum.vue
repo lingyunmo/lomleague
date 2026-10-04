@@ -6,12 +6,10 @@
         <h2 class="forum-title">{{ post.title }}</h2>
         <n-space>
           <LikeButton entity-type="post" :entity-id="post.id" />
-          <n-button
-            v-if="authStore.user?.id === post.userId || authStore.isAdmin"
-            size="small"
-            @click="startEditPost"
-          >
-            <template #icon><n-icon><CreateOutline /></n-icon></template>
+          <n-button v-if="authStore.user?.id === post.userId || authStore.isAdmin" size="small" @click="startEditPost">
+            <template #icon
+              ><n-icon><CreateOutline /></n-icon
+            ></template>
             编辑
           </n-button>
           <n-button
@@ -20,11 +18,15 @@
             type="error"
             @click="confirmDeletePost"
           >
-            <template #icon><n-icon><Trash /></n-icon></template>
+            <template #icon
+              ><n-icon><Trash /></n-icon
+            ></template>
             删除
           </n-button>
           <n-button type="primary" @click="goBack">
-            <template #icon><n-icon><ArrowBack /></n-icon></template>
+            <template #icon
+              ><n-icon><ArrowBack /></n-icon
+            ></template>
             返回论坛
           </n-button>
         </n-space>
@@ -76,12 +78,18 @@
               <n-icon><Chatbubbles /></n-icon> 共 {{ replyTotal }} 条回复
             </h3>
             <n-button type="primary" @click="openNewReply" style="margin-bottom: 12px">
-              <template #icon><n-icon><Create /></n-icon></template>
+              <template #icon
+                ><n-icon><Create /></n-icon
+              ></template>
               发表回复
             </n-button>
           </n-space>
 
-          <n-empty v-if="!repliesLoading && replies.length === 0" description="暂无回复，抢个沙发吧！" class="empty-state" />
+          <n-empty
+            v-if="!repliesLoading && replies.length === 0"
+            description="暂无回复，抢个沙发吧！"
+            class="empty-state"
+          />
 
           <transition-group name="list">
             <n-card v-for="reply in replies" :key="reply.id" class="reply-card" embedded>
@@ -107,7 +115,9 @@
                     type="error"
                     @click="confirmDeleteReply(reply.id)"
                   >
-                    <template #icon><n-icon><Trash /></n-icon></template>
+                    <template #icon
+                      ><n-icon><Trash /></n-icon
+                    ></template>
                   </n-button>
                 </n-space>
               </n-space>
@@ -135,7 +145,7 @@
       v-model:show="showReplyModal"
       title="回帖"
       preset="card"
-      style="width: 60%; padding: 2px; border-radius: 16px; overflow: auto;"
+      style="width: 60%; padding: 2px; border-radius: 16px; overflow: auto"
     >
       <AddPost :postId="post.id" @created="handleReplyCreated" @cancel="showReplyModal = false" />
     </n-modal>
@@ -195,7 +205,7 @@ const fetchPost = async () => {
   try {
     const response = await forumApi.getPost(postId);
     post.value = response.data || {};
-  } catch (error) {
+  } catch {
     message.error('获取帖子失败，请稍后重试');
     await router.push('/forums');
   } finally {
@@ -212,7 +222,7 @@ const fetchReplies = async () => {
     });
     replies.value = response.data.replies;
     replyTotal.value = response.data.total;
-  } catch (error) {
+  } catch {
     message.error('获取回复失败');
   } finally {
     repliesLoading.value = false;
@@ -286,7 +296,9 @@ const confirmDeleteReply = (replyId) => {
 
 // ==================== 导航 ====================
 const goBack = () => router.push({ name: 'Forums' });
-const openNewReply = () => { showReplyModal.value = true; };
+const openNewReply = () => {
+  showReplyModal.value = true;
+};
 const handleReplyCreated = () => {
   showReplyModal.value = false;
   replyPage.value = 1;

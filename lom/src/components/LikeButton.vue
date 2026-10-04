@@ -5,6 +5,8 @@
     @click="toggleLike"
     :loading="loading"
     :type="liked ? 'error' : 'default'"
+    :aria-label="liked ? '取消点赞' : '点赞'"
+    :aria-pressed="liked"
   >
     <template #icon>
       <n-icon><Heart /></n-icon>
@@ -21,13 +23,15 @@
 import { ref, onMounted } from 'vue';
 import { Heart } from '@vicons/ionicons5';
 import { useLike } from '../composables/useLike.js';
+import { useMessage } from 'naive-ui';
 
 const props = defineProps({
   entityType: { type: String, required: true },
   entityId: { type: Number, required: true },
 });
 
-const { toggleLike: doToggle, getLikeCount, getLikeStatus, loading } = useLike();
+const { toggleLike: doToggle, getLikeCount, getLikeStatus, loading, error } = useLike();
+const message = useMessage();
 
 const liked = ref(false);
 const count = ref(0);
@@ -46,6 +50,8 @@ const toggleLike = async () => {
   if (res) {
     liked.value = res.liked;
     count.value = res.count;
+  } else if (error.value) {
+    message.error(error.value);
   }
 };
 </script>

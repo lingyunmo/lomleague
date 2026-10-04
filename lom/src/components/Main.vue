@@ -192,7 +192,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMessage } from 'naive-ui'
-import { Code, PlayCircle, Server } from '@vicons/ionicons5'
+import { Code, PlayCircle } from '@vicons/ionicons5'
 import { forumApi } from '../api/forum.js'
 import { userApi } from '../api/user.js'
 import { useAuthStore } from '../stores/authStore.js'

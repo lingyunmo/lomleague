@@ -12,23 +12,20 @@
 
     <!-- Markdown 编辑器 -->
     <n-form-item label="内容" path="content" required>
-      <v-md-editor
-          v-model="formData.content"
-          placeholder="输入文章内容（支持 Markdown 语法）..."
-      />
+      <v-md-editor v-model="formData.content" placeholder="输入文章内容（支持 Markdown 语法）..." />
     </n-form-item>
 
     <!-- 附件上传 -->
     <n-form-item label="附件（可选）">
       <n-upload
-          :custom-request="customUpload"
-          accept="image/*,video/*,audio/*,.pdf,.zip"
-          list-type="text"
-          :show-upload-list="true"
-          multiple
-          :max="5"
-          :default-file-list="defaultFileList"
-          @remove="handleRemove"
+        :custom-request="customUpload"
+        accept="image/*,video/*,audio/*,.pdf,.zip"
+        list-type="text"
+        :show-upload-list="true"
+        multiple
+        :max="5"
+        :default-file-list="defaultFileList"
+        @remove="handleRemove"
       >
         <n-button>上传附件</n-button>
       </n-upload>
@@ -99,7 +96,7 @@ const handleSubmit = async () => {
     message.success('文章创建成功！');
     emit('created');
     resetForm();
-  } catch (error) {
+  } catch {
     message.error('创建文章失败，请稍后重试。');
   } finally {
     submitting.value = false;
