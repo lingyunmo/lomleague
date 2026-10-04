@@ -9,16 +9,22 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.8 (not yet released)
+## Working batch: 2.0.9 (not yet released)
+
+- Version 2.0.8 is released: GitHub-verified commit c978be7db85caff4748f36067358998dead97aae, successful Actions run 37179993982 and matching live health/footer. The actual green Verified badge was checked in the browser; the new Node 24 actions passed real CI/container deployment. Screenshot: lomleague-2.0.8-homepage.jpg in the task output directory.
+- Community and announcement lists share a responsive, theme-aware editorial shell and entries. Detail navigation is now a real link, with separate actions and unchanged permissions.
+- Search/page/size are restorable URL state, preserving literal percent/Unicode text and unrelated query parameters. Debounced typing replaces history; pagination pushes history, detail/back restores the list and pending search is canceled on navigation/unmount.
+- Twenty-nine added frontend regressions passed. Full local checks passed: 196 tests (99 backend, 97 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.9.
+- Production-build browser QA passed desktop light/dark layout, 390px mobile layout without horizontal overflow, URL search/page/size identity, keyboard Enter navigation, browser-back restoration, original attachment filename display and the announcement page. Temporary viewport emulation was cleared. The old owned preview process had stopped and was replaced only after confirming its port was free; production was unaffected.
+
+## Previous release batches
 
 - Version 2.0.7 is released: GitHub-verified commit 735555c32974e9957703178215073e0bc26d6b0d, successful Actions run 37171774550, and matching live version/revision.
 - The next batch fixes a reproduced pagination event bug (duplicate page updates, missing page/size payload), preserves search filters on pagination and retry, ignores stale asynchronous responses, and exposes loading/error/retry separately from empty lists.
 - Unsuccessful likes now produce a safe user-facing message without logging raw request objects. Concurrent duplicate toggle calls are suppressed. Accessibility includes pressed state and list busy/error announcements.
 - Existing pnpm setup and registry login actions are upgraded to official Node 24 releases. Unused code cleanup removes the twelve pre-existing lint warnings without changing business rules.
 - Full local checks passed: 167 tests (99 backend, 68 frontend), zero-warning lint, production build and production dependency audit. The actual local read-only smoke reports 2.0.8 with local-preview-v2.0.8.
-- Production-build browser QA confirmed literal percent search, distinct second-page results, page-size reset, a mounted search field during loading, and error/retry/empty distinctions. Only the owned local backend was stopped for the disconnect test; retry recovered after restarting it. No production writes were performed. Do not claim 2.0.8 is deployed until Actions and live revision verification succeed.
-
-## Previous release batches
+- Production-build browser QA confirmed literal percent search, distinct second-page results, page-size reset, a mounted search field during loading, and error/retry/empty distinctions. Only the owned local backend was stopped for the disconnect test; retry recovered after restarting it. No production writes were performed. The subsequent Actions/live checks confirmed the release, as recorded above.
 
 - Version 2.0.6 is released: GitHub-verified commit 281c141815b40e0a61b97b7944fafc8bc6b0f905, successful Actions run 37171276211, and matching live health revision. The homepage screenshot is saved in the task output directory as lomleague-2.0.6-homepage.jpg.
 - Next batch isolates uploaded active documents. Client MIME headers are not proof of content: an allowed image MIME can accompany an HTML filename. Uploaded non-PDF responses now use sandbox without scripts or same-origin access, while preserving downloads and same-path image/media requests. All uploads receive nosniff and no-referrer.
@@ -59,8 +65,8 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 70795 at port 3000, test DB port 13306, revision `local-preview-v2.0.8`. The actual read-only smoke script passed against it. The previous owned process session 21307 was stopped to test disconnect handling. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination and retry passed.
-- Production Vite preview session 5574 at `http://127.0.0.1:4173`.
+- Backend preview process session 88007 at port 3000, test DB port 13306, revision `local-preview-v2.0.9`. The actual read-only smoke script passed against it. The previous owned process session 70795 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry and restorable URL state passed.
+- Production Vite preview session 44856 at `http://127.0.0.1:4173`. Previous owned session 5574 exited; its port was confirmed free before restart.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.
 

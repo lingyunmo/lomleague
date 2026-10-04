@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.9 — 2026-10-04
+
+- Redesign community and announcement lists with the homepage's editorial, charcoal/lime visual language, theme-aware surfaces, responsive layouts and shared components. Preserve all existing content and author/admin permissions.
+- Use real detail links for keyboard navigation, opening new tabs and link sharing. Keep like/delete controls outside navigation links, provide explicit labels and avoid cutting an emoji in a content preview.
+- Store search, page and page-size state in ordinary URL queries. Refreshing, sharing and browser back/forward restore the current list; typing is debounced without filling browser history. Literal percent sequences and Unicode remain unchanged after the router's transport decoding.
+- Keep retry/empty/error behavior, preserve unrelated query parameters and cancel pending search navigation when leaving the page. No database or upload changes.
+
 ## 2.0.8 — 2026-10-04
 
 - Fix pagination's duplicate updates and missing page/size event arguments. Keep search filters when paging or retrying, and reset to page one when changing page size.

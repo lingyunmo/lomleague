@@ -1,113 +1,90 @@
 <template>
-  <div class="forums-container" :aria-busy="loading">
-    <div class="forums-wrapper">
-      <div class="forums-header">
-        <h2 class="forums-title">论坛帖子</h2>
-        <div class="forums-header-actions">
-          <n-input v-model:value="searchKeyword" placeholder="搜索帖子..." clearable class="search-input">
-            <template #prefix
-              ><n-icon><Search /></n-icon
-            ></template>
-          </n-input>
-          <n-button v-if="authStore.token" type="primary" @click="showAddPostModal = true">
-            <template #icon>
-              <n-icon>
-                <Add />
-              </n-icon>
-            </template>
-            新增帖子
-          </n-button>
-        </div>
-      </div>
-
+  <div :aria-busy="loading">
+    <CommunityShell
+      title="社区论坛"
+      eyebrow="THE BUILDERS' LOGBOOK / 01"
+      description="聊聊新世界，分享建造与作品。让一次探索，成为下一段故事。"
+      :total="totalPosts"
+      :keyword="searchKeyword"
+    >
+      <template #actions>
+        <n-input
+          v-model:value="searchKeyword"
+          :input-props="{ 'aria-label': '搜索帖子' }"
+          placeholder="搜索帖子..."
+          clearable
+        >
+          <template #prefix
+            ><n-icon><Search /></n-icon
+          ></template>
+        </n-input>
+        <n-button v-if="authStore.token" type="primary" @click="showAddPostModal = true">
+          <template #icon
+            ><n-icon><Add /></n-icon></template
+          >发布帖子
+        </n-button>
+        <RouterLink v-else class="community-signin" :to="{ name: 'Login', query: { redirect: route.fullPath } }"
+          >登录后发布 ↗</RouterLink
+        >
+      </template>
       <div v-if="loading" class="list-loading" role="status"><n-spin size="small" /><span>正在加载帖子…</span></div>
       <ListFetchFeedback :message="error" @retry="fetchPosts()" />
-      <n-space vertical size="small" class="post-list">
-        <n-card v-for="post in posts" :key="post.id" class="post-card" hoverable @click="viewPost(post.id)">
-          <div class="post-row">
-            <div class="post-left">
-              <UserFrame :userId="post.userId" :src="post.user?.avatar" :size="36" />
-              <div class="post-main">
-                <div class="post-title">{{ post.title }}</div>
-                <div class="post-summary">
-                  {{ post.content?.substring(0, 60) || '' }}{{ (post.content?.length || 0) > 60 ? '...' : '' }}
-                </div>
-                <div class="post-meta">
-                  <n-icon size="13"><Person /></n-icon> {{ post.user?.username || '匿名' }}
-                  <n-icon size="13"><Time /></n-icon> {{ formatDate(post.updatedAt) }}
-                  <n-icon size="13"><Chatbubbles /></n-icon> {{ post._count?.replies || 0 }}
-                  <n-icon size="13"><Globe /></n-icon> {{ post.region || '未知' }}
-                </div>
-              </div>
-            </div>
-            <div class="post-right" @click.stop>
-              <LikeButton entity-type="post" :entity-id="post.id" />
-              <n-button
-                v-if="authStore.user?.id === post.userId || authStore.isAdmin"
-                quaternary
-                size="tiny"
-                type="error"
-                @click="confirmDeletePost(post.id)"
-              >
-                <template #icon
-                  ><n-icon><Trash /></n-icon
-                ></template>
-              </n-button>
-            </div>
-          </div>
-        </n-card>
-      </n-space>
-
-      <n-empty v-if="!loading && !error && posts.length === 0" description="暂无帖子" class="empty-state">
+      <div class="community-list">
+        <CommunityEntry
+          v-for="post in posts"
+          :key="post.id"
+          :item="post"
+          type="post"
+          :can-delete="authStore.user?.id === post.userId || authStore.isAdmin"
+          @delete="confirmDeletePost"
+        />
+      </div>
+      <n-empty
+        v-if="!loading && !error && posts.length === 0"
+        :description="searchKeyword ? '没有匹配的帖子' : '暂无帖子'"
+        class="empty-state"
+      >
         <template #extra>
-          <n-button v-if="authStore.token" @click="showAddPostModal = true">发布第一个帖子</n-button>
+          <n-button v-if="searchKeyword" @click="searchKeyword = ''">清空搜索</n-button>
+          <n-button v-else-if="authStore.token" @click="showAddPostModal = true">发布第一个帖子</n-button>
         </template>
       </n-empty>
-
       <Pagination
         v-model:page="pagination.page"
         v-model:page-size="pagination.pageSize"
         :total="totalPosts"
         @change="onPageChange"
       />
-    </div>
-
+    </CommunityShell>
     <n-modal
       v-model:show="showAddPostModal"
       title="新增帖子"
       preset="card"
-      style="width: 60%; padding: 2px; border-radius: 16px; overflow: auto"
+      style="width: min(760px, calc(100vw - 32px)); padding: 2px; border-radius: 16px; overflow: auto"
     >
       <AddForum @created="handlePostCreated" @cancel="showAddPostModal = false" />
     </n-modal>
   </div>
 </template>
-
 <script setup>
-// ============================================================
-// Forums.vue — 论坛帖子列表
-// Issue #10: 接入 useDebounce + usePaginatedFetch composables
-// ============================================================
-import { ref, watch, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { ref } from 'vue';
+import { RouterLink, useRoute } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
+import { Add, Search } from '@vicons/ionicons5';
 import { forumApi } from '../../api/forum.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { usePaginatedFetch } from '../../composables/usePaginatedFetch.js';
-import { useDebounce } from '../../composables/useDebounce.js';
-import { formatDate } from '../../utils/date.js';
+import { useListRouteQuery } from '../../composables/useListRouteQuery.js';
+import CommunityShell from '../community/CommunityShell.vue';
+import CommunityEntry from '../community/CommunityEntry.vue';
 import Pagination from '../Pagination.vue';
 import ListFetchFeedback from '../ListFetchFeedback.vue';
 import AddForum from './AddForum.vue';
-import { Add, Search, Time, Chatbubbles, Globe, Trash, Person } from '@vicons/ionicons5';
-import LikeButton from '../LikeButton.vue';
-import UserFrame from '../UserFrame.vue';
 
 const authStore = useAuthStore();
+const route = useRoute();
 const dialog = useDialog();
 const message = useMessage();
-const router = useRouter();
-
 const {
   data: posts,
   total: totalPosts,
@@ -115,27 +92,13 @@ const {
   error,
   pagination,
   fetch: fetchPosts,
-  onPageChange,
-} = usePaginatedFetch((params) => forumApi.getPosts(params), {});
-
-const searchKeyword = ref('');
-const { debounced: debouncedSearch } = useDebounce((keyword) => {
-  fetchPosts({ keyword: keyword || undefined });
-}, 300);
-
-watch(searchKeyword, (val) => {
-  pagination.page = 1;
-  debouncedSearch(val);
-});
-
+} = usePaginatedFetch((params) => forumApi.getPosts(params));
+const { searchKeyword, onPageChange, refresh } = useListRouteQuery(pagination, fetchPosts);
 const showAddPostModal = ref(false);
-
 const handlePostCreated = () => {
   showAddPostModal.value = false;
-  pagination.page = 1;
-  fetchPosts();
+  refresh();
 };
-
 const confirmDeletePost = (postId) => {
   dialog.warning({
     title: '确认删除',
@@ -153,159 +116,30 @@ const confirmDeletePost = (postId) => {
     },
   });
 };
-
-const viewPost = (postId) => {
-  router.push({ name: 'Forum', params: { id: postId } });
-};
-
-onMounted(() => {
-  fetchPosts();
-});
 </script>
-
 <style scoped>
+.community-list {
+  display: grid;
+  gap: 12px;
+}
 .list-loading {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
   padding: 16px 0;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
 }
-.forums-container {
-  display: flex;
-  justify-content: center;
-  padding: 40px;
-  min-height: 100%;
-  background: linear-gradient(135deg, var(--color-bg-gradient-start), var(--color-bg-gradient-end));
-  animation: fadeIn 1s ease-in-out;
-}
-
-.forums-wrapper {
-  width: 100%;
-  max-width: 1200px;
-  background: var(--glass-bg);
-  border-radius: var(--glass-radius-sm);
-  padding: 16px;
-  box-shadow: var(--shadow-deep);
-  backdrop-filter: var(--glass-blur);
-}
-
-.forums-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-.forums-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.search-input {
-  width: 260px;
-}
-.forums-title {
-  color: var(--color-brand-primary);
-  font-size: 24px;
-}
-.post-list {
-  width: 100%;
-}
-
-.post-card {
-  background: var(--glass-bg-inner);
-  border-radius: 10px;
-  cursor: pointer;
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
-  box-shadow: var(--shadow-subtle);
-}
-.post-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-medium);
-}
-
-.post-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.post-left {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.post-main {
-  min-width: 0;
-}
-
-.post-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.post-summary {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  margin-top: 2px;
-}
-
-.post-meta {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-  color: var(--color-text-subtle);
-  margin-top: 4px;
-}
-.post-meta > :not(:first-child) {
-  margin-left: 8px;
-}
-
-.post-right {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  flex-shrink: 0;
-}
-
 .empty-state {
-  padding: 48px 0;
+  padding: 52px 0;
 }
-
-@media (max-width: 768px) {
-  .forums-container {
-    padding: 16px;
-  }
-  .forums-header {
-    flex-direction: column;
-  }
-  .forums-header-actions {
-    width: 100%;
-    flex-direction: column;
-  }
-  .search-input {
-    width: 100%;
-  }
-  .post-meta-row {
-    gap: 10px;
-  }
-  .post-avatar {
-    display: none;
-  }
+.community-signin {
+  font-size: 12px;
+  color: var(--color-text-primary);
+  text-decoration: none;
+  padding: 10px 0;
+}
+.community-signin:focus-visible {
+  outline: 2px solid var(--color-portal-accent);
+  outline-offset: 4px;
 }
 </style>
