@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.7 — 2026-10-04
+
+- Serve uploaded documents with an isolated content-security policy, no MIME sniffing and no outgoing referrer. A forged allowed MIME type can no longer make an HTML filename execute as part of the application origin.
+- Preserve file bytes, timestamp names, image/media paths and downloads. Keep native PDF viewing separate from the document sandbox, which can interfere with built-in PDF viewers.
+- Add actual multipart/HTTP and response-policy regressions. The production database, upload directory and stored records remain unchanged.
+
 ## 2.0.6 — 2026-10-04
 
 - Atomically claim the existing last-check-in date before awarding coins. Concurrent requests receive the existing 409 response instead of duplicate rewards; the returned balance is read within the same transaction.

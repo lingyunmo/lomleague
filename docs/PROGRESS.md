@@ -9,7 +9,12 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.6 (not yet released)
+## Working batch: 2.0.7 (not yet released)
+
+- Version 2.0.6 is released: GitHub-verified commit 281c141815b40e0a61b97b7944fafc8bc6b0f905, successful Actions run 37171276211, and matching live health revision. The homepage screenshot is saved in the task output directory as lomleague-2.0.6-homepage.jpg.
+- Next batch isolates uploaded active documents. Client MIME headers are not proof of content: an allowed image MIME can accompany an HTML filename. Uploaded non-PDF responses now use sandbox without scripts or same-origin access, while preserving downloads and same-path image/media requests. All uploads receive nosniff and no-referrer.
+- Native PDF viewers use a separate frame-ancestor policy rather than document sandbox. Browser compatibility was checked against MDN and the Chromium PDF/CSP regression record, then verified in Chrome with a real local one-page fixture. A valid HTML test script did not execute, and the existing timestamp/Chinese/percent image still loaded at its original 580px width.
+- Existing filenames, bytes, database rows and uploads are never renamed or removed. Full checks passed: 150 tests (99 backend, 51 frontend), lint without errors, production build, production dependency audit and actual local read-only smoke.
 
 - Version 2.0.5 is released: GitHub-verified commit fb325af9a8d32be90b3609daf3c6e5449826bcdf, successful Actions run 37170920943, live health and footer match 2.0.5. The attachment/PDF batch did not change production schema or existing uploads.
 - Next batch fixes a reproduced check-in race: twelve concurrent local requests originally granted five rewards. A conditional update on the existing last_checkin_date and a balance read within one transaction now grant only one reward. No new field, migration, timezone or reward-rule change.
@@ -45,7 +50,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 97847 at port 3000, test DB port 13306, revision `local-preview-v2.0.6`. The actual read-only smoke script passed against it. The previous owned process session 34526 was stopped. Browser production-preview login/logout correctly updates navigation/member UI; attachment fixture rendering passed.
+- Backend preview process session 21307 at port 3000, test DB port 13306, revision `local-preview-v2.0.7`. The actual read-only smoke script passed against it. The previous owned process session 97847 was stopped. Browser production-preview login/logout correctly updates navigation/member UI; attachment fixture rendering, active-document isolation and native PDF viewing passed.
 - Production Vite preview session 5574 at `http://127.0.0.1:4173`.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.

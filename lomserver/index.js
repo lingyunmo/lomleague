@@ -23,6 +23,7 @@ import { v4 as uuidv4 } from 'uuid';
 import axios from 'axios';
 import logger from './utils/logger.js';
 import errorHandler from './middleware/errorHandler.js';
+import { createUploadStatic } from './middleware/uploadStatic.js';
 
 import userRoutes from './routes/userRoutes.js';
 import fileRoutes from './routes/fileRoutes.js';
@@ -60,7 +61,7 @@ app.use(cors(config.cors));
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
-    contentSecurityPolicy: false, // CSP 由 Vite 构建时处理，运行时不需要
+    contentSecurityPolicy: false, // SPA policy is separate; upload responses use their own isolation below.
   }),
 );
 
@@ -127,7 +128,7 @@ app.use('/api/likes', likeRoutes);
 app.use('/api/notifications', notificationRoutes);
 
 // 静态文件 — 上传目录
-app.use('/api/upload', express.static(path.join(process.cwd(), 'upload')));
+app.use('/api/upload', createUploadStatic(path.join(process.cwd(), 'upload')));
 
 // IP 定位
 app.get('/api/get-ip', async (req, res) => {

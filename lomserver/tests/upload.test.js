@@ -5,6 +5,7 @@ import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createFileRouter } from '../routes/fileRoutes.js';
+import { createUploadStatic } from '../middleware/uploadStatic.js';
 
 describe('real multipart upload → disk → returned URL', () => {
   let directory, server, baseUrl;
@@ -15,7 +16,7 @@ describe('real multipart upload → disk → returned URL', () => {
     directory = await mkdtemp(path.join(tmpdir(), 'lom-upload-test-'));
     const app = express();
     app.use('/api/file', createFileRouter(directory));
-    app.use('/api/upload', express.static(directory));
+    app.use('/api/upload', createUploadStatic(directory));
     server = app.listen(0, '127.0.0.1');
     await new Promise((resolve) => server.once('listening', resolve));
     baseUrl = `http://127.0.0.1:${server.address().port}`;
@@ -43,6 +44,8 @@ describe('real multipart upload → disk → returned URL', () => {
       expect(await readFile(path.join(directory, '7', data.filename), 'utf8')).toBe('fixture-bytes');
       const download = await fetch(`${baseUrl}${data.url}`);
       expect(download.status).toBe(200);
+      expect(download.headers.get('x-content-type-options')).toBe('nosniff');
+      expect(download.headers.get('content-security-policy')).toContain('sandbox allow-downloads');
       expect(await download.text()).toBe('fixture-bytes');
     },
   );
@@ -82,6 +85,7 @@ describe('real multipart upload → disk → returned URL', () => {
       const download = await fetch(`${baseUrl}${data.url}`);
       expect(download.status).toBe(200);
       expect(download.headers.get('content-type')).toContain('application/pdf');
+      expect(download.headers.get('content-security-policy')).not.toContain('sandbox');
       expect(await download.text()).toBe(bytes);
     },
   );
@@ -96,6 +100,27 @@ describe('real multipart upload → disk → returned URL', () => {
     });
     expect(response.status).toBe(400);
     expect(await readdir(path.join(directory, '7'))).toEqual(before);
+  });
+  it('isolates an active filename even if a client claims an allowed image MIME type', async () => {
+    const bytes =
+      '<!doctype html><h1>Local isolation fixture</h1><script>document.body.dataset.executed="yes"</script>';
+    const body = new FormData();
+    body.append('file', new Blob([bytes], { type: 'image/png' }), 'local-isolation.html');
+    const response = await fetch(`${baseUrl}/api/file/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    const download = await fetch(`${baseUrl}${data.url}`);
+    expect(download.status).toBe(200);
+    const policy = download.headers.get('content-security-policy');
+    expect(policy).toContain('sandbox allow-downloads');
+    expect(policy).not.toContain('allow-scripts');
+    expect(policy).not.toContain('allow-same-origin');
+    expect(download.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(await download.text()).toBe(bytes);
   });
   it('still enforces the 10 MB limit and removes rejected partial uploads', async () => {
     const before = await readdir(path.join(directory, '7'));
