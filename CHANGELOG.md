@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.19 — 2026-10-04
+
+- Scope personal profile loading and editor operations to the active route, login and component, including logout/return. Clear private drafts when the context changes and show a retryable read error instead of editable empty fields.
+- Lock profile/password submissions before asynchronous validation, preserve existing validation/credential rules and suppress late feedback after navigation or unmount. Update only the current member's submitted profile fields after a successful save; server requests already sent are not represented as canceled.
+- Bind actual avatar upload finish/remove events and preview the current draft. Preserve the server's exact timestamp/Unicode/literal-percent filename and raw URL. Separate in-flight upload state from attachment-list readiness so existing avatars need no synthetic file id or new mapping; removing a draft never deletes stored uploads.
+- Refresh the responsive settings layout with named inputs, native 44px controls, readable loading/retry states and reduced-motion support. Add 26 frontend tests, including real Naive UI buttons/uploads, and pass full local test/lint/build/audit/read-only smoke and production-build page acceptance. No dependency, database schema or stored upload changes.
+
 ## 2.0.18 — 2026-10-04
 
 - Repair the personal profile's activity source with bounded, authenticated-member-only reads and actual chronological ordering; preserve Unicode reply previews. Profile and activity responses are no-store, without schema or data changes.

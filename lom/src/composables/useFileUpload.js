@@ -11,7 +11,7 @@
  * @param {Object}   [constraints]           — 可选的文件限制
  * @param {string[]} [constraints.allowedTypes] — 允许的 MIME 类型
  * @param {number}   [constraints.maxSize]      — 最大文件字节数
- * @returns {{ customUpload, handleFinish, handleRemove, isReadyToSubmit }}
+ * @returns {{ customUpload, handleFinish, handleRemove, isReadyToSubmit, isUploading }}
  */
 import { computed, ref, watch, getCurrentScope, onScopeDispose } from 'vue';
 import { useMessage } from 'naive-ui';
@@ -153,5 +153,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
     return pending.value === 0 && attLen === listLen;
   });
 
-  return { customUpload, handleFinish, handleRemove, isReadyToSubmit };
+  // Existing avatar URLs need no synthetic file-list entry; expose in-flight state separately.
+  const isUploading = computed(() => pending.value > 0);
+  return { customUpload, handleFinish, handleRemove, isReadyToSubmit, isUploading };
 }

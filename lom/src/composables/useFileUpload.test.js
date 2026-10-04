@@ -91,6 +91,31 @@ describe('client upload filename identity', () => {
 });
 
 describe('upload completion and actual Naive UI identity', () => {
+  it('separates an already stored avatar from current upload operations without inventing file identities', async () => {
+    const avatar = ref('/api/upload/7/1720000000000_existing.png');
+    const files = ref([]);
+    const api = helper(avatar, files, { allowedTypes: ['image/png'] });
+    expect(api.isUploading.value).toBe(false);
+    expect(files.value).toEqual([]);
+    const pending = deferred();
+    fixtures.upload.mockReturnValueOnce(pending.promise);
+    const options = {
+      ...uploadOptions('new-avatar'),
+      file: {
+        id: 'new-avatar',
+        name: '中文100% %E4%B8%AD.png',
+        file: new File(['png'], '中文100% %E4%B8%AD.png', { type: 'image/png' }),
+      },
+    };
+    const running = api.customUpload(options);
+    expect(api.isUploading.value).toBe(true);
+    expect(avatar.value).toBe('/api/upload/7/1720000000000_existing.png');
+    pending.resolve({ data: { filename: '1720000000001_中文100% %E4%B8%AD.png', url: '/new.png' } });
+    await running;
+    expect(api.isUploading.value).toBe(false);
+    expect(files.value[0].id).toBe('new-avatar');
+    expect(files.value[0].name).toBe('1720000000001_中文100% %E4%B8%AD.png');
+  });
   it('shows the stored timestamp name and removes its URL through the actual upload component', async () => {
     const filename = '1720000000000_中文100% %E4%B8%AD.pdf';
     const url = '/api/upload/7/' + encodeURIComponent(filename);
