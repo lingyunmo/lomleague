@@ -11,6 +11,7 @@
  * @param {Object}   [constraints]           — 可选的文件限制
  * @param {string[]} [constraints.allowedTypes] — 允许的 MIME 类型
  * @param {number}   [constraints.maxSize]      — 最大文件字节数
+ * @param {()=>unknown} [constraints.context] — 可选的响应式表单上下文；变化时忽略旧上传结果
  * @returns {{ customUpload, handleFinish, handleRemove, isReadyToSubmit, isUploading }}
  */
 import { computed, ref, watch, getCurrentScope, onScopeDispose } from 'vue';
@@ -48,7 +49,9 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
     inFlight.clear();
     pending.value = 0;
   };
-  watch(() => auth.token, invalidate, { flush: 'sync' });
+  watch([() => auth.token, ...(typeof constraints.context === 'function' ? [constraints.context] : [])], invalidate, {
+    flush: 'sync',
+  });
   if (getCurrentScope()) {
     onScopeDispose(() => {
       disposed = true;

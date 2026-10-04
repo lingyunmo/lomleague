@@ -13,7 +13,7 @@ vi.mock('../../api/user.js', () => ({ userApi: { login: calls.login } }));
 vi.mock('../../api/ip.js', () => ({ ipApi: { getIpRegion: calls.getIpRegion } }));
 vi.mock('../../stores/authStore.js', () => ({ useAuthStore: () => calls }));
 vi.mock('vue-router', () => ({
-  useRoute: () => ({ query: { redirect: '/tools/coordinates' } }),
+  useRoute: () => ({ name: 'Login', fullPath: '/login', query: { redirect: '/tools/coordinates' } }),
   useRouter: () => ({ push: calls.push }),
 }));
 vi.mock('naive-ui', async (original) => ({ ...(await original()), useMessage: () => calls }));
@@ -25,6 +25,10 @@ beforeEach(() => {
   calls.login.mockReset().mockResolvedValue({ data: { token: 'fixture-token' } });
   calls.fetchUser.mockReset().mockResolvedValue({});
   calls.getIpRegion.mockReset().mockRejectedValue(new Error('offline geo'));
+  calls.token = null;
+  calls.setToken.mockImplementation((token) => {
+    calls.token = token;
+  });
   wrapper = mount(Login, { global: { components: { NForm, NFormItem, NInput, NButton, NIcon } } });
 });
 afterEach(() => wrapper.unmount());

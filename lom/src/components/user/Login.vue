@@ -5,13 +5,21 @@
       <h2 class="auth-title">欢迎回来</h2>
       <p class="auth-sub">登录 lom 联盟</p>
 
-      <n-form ref="formRef" :model="form" :rules="rules" class="auth-form">
+      <n-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        :disabled="loading"
+        class="auth-form"
+        @submit.prevent="handleLogin"
+      >
         <n-form-item path="username">
           <n-input
             v-model:value="form.username"
             placeholder="用户名"
             size="large"
-            :input-props="{ autocomplete: 'username' }"
+            :disabled="loading"
+            :input-props="{ autocomplete: 'username', 'aria-label': '用户名' }"
           >
             <template #prefix
               ><n-icon><Person /></n-icon
@@ -22,9 +30,10 @@
           <n-input
             v-model:value="form.password"
             type="password"
+            :disabled="loading"
             placeholder="密码"
             size="large"
-            :input-props="{ autocomplete: 'current-password' }"
+            :input-props="{ autocomplete: 'current-password', 'aria-label': '密码' }"
             @keyup.enter="handleLogin"
           >
             <template #prefix
@@ -45,7 +54,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useMessage } from 'naive-ui';
 import { Person, LockClosed } from '@vicons/ionicons5';
@@ -59,6 +68,28 @@ const route = useRoute();
 const router = useRouter();
 const message = useMessage();
 const authStore = useAuthStore();
+let generation = 0,
+  operation,
+  disposed = false,
+  committingToken = false;
+const resetPrivateState = () => {
+  generation++;
+  operation = undefined;
+  loading.value = false;
+  form.value = { username: '', password: '' };
+};
+watch(
+  () => authStore.token,
+  () => {
+    if (!committingToken) resetPrivateState();
+  },
+  { flush: 'sync' },
+);
+watch(() => route.fullPath, resetPrivateState, { flush: 'sync' });
+onBeforeUnmount(() => {
+  disposed = true;
+  resetPrivateState();
+});
 
 const rules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
@@ -66,22 +97,66 @@ const rules = {
 };
 
 const handleLogin = async () => {
-  try {
-    await formRef.value?.validate();
-  } catch {
-    return;
-  }
+  if (disposed || loading.value || route.name !== 'Login' || !formRef.value) return;
+  const payload = { ...form.value };
+  const request = {
+    token: authStore.token,
+    generation,
+    path: route.fullPath,
+    destination: typeof route.query.redirect === 'string' ? route.query.redirect : '/',
+  };
+  operation = request;
+  const isCurrent = () =>
+    !disposed &&
+    operation === request &&
+    request.generation === generation &&
+    request.token === authStore.token &&
+    request.path === route.fullPath &&
+    route.name === 'Login';
   loading.value = true;
+  let validated = false,
+    committed = false;
   try {
-    const response = await userApi.login({ username: form.value.username, password: form.value.password });
-    authStore.setToken(response.data.token);
+    await formRef.value.validate();
+    validated = true;
+    if (!isCurrent()) return;
+    if (payload.username !== form.value.username || payload.password !== form.value.password) {
+      message.warning('输入已更改，请重新提交');
+      return;
+    }
+    const response = await userApi.login(payload);
+    if (!isCurrent()) return;
+    const token = response.data?.token;
+    if (typeof token !== 'string' || !token) throw new Error('Missing login token');
+    // The real store may synchronously clear the old token before installing this one.
+    committingToken = true;
+    try {
+      authStore.setToken(token);
+      request.token = authStore.token;
+    } finally {
+      committingToken = false;
+    }
+    if (!isCurrent() || authStore.token !== token) return;
+    committed = true;
+    form.value.password = '';
     await authStore.fetchUser();
+    if (!isCurrent()) return;
     message.success('登录成功');
-    router.push(route.query.redirect || '/');
+    await router.push(request.destination);
   } catch (error) {
-    message.error(error.response?.data?.message || '登录失败，请检查用户名和密码');
+    if (isCurrent())
+      message.error(
+        committed
+          ? '已登录，但页面跳转失败，请返回首页'
+          : validated
+            ? error.response?.data?.message || '登录失败，请检查用户名和密码'
+            : '请修正表单中的错误',
+      );
   } finally {
-    loading.value = false;
+    if (isCurrent()) {
+      loading.value = false;
+      operation = undefined;
+    }
   }
 };
 </script>
@@ -142,5 +217,17 @@ const handleLogin = async () => {
   margin: 24px 0 0;
   font-size: 14px;
   color: var(--color-text-muted);
+}
+.auth-form :deep(.n-input),
+.auth-form :deep(.n-input__input),
+.auth-form :deep(.n-input__input-el),
+.auth-form :deep(button),
+.auth-switch :deep(button) {
+  min-height: 44px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-card {
+    animation: none;
+  }
 }
 </style>

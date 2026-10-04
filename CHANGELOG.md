@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.25 — 2026-10-05
+
+- Lock login/registration before asynchronous validation, capture validated credentials and ignore stale completions after route, session, logout/return or component changes. Test the real Pinia token transition; expired profile reads cannot announce successful login. Distinguish completed authentication/account creation from a later navigation failure.
+- Keep uploads authenticated. Replace the anonymous registration page's unusable avatar upload control with guidance to set an avatar after registering and logging in. Preserve authenticated upload behavior, wait for avatar readiness, bind actual finish/remove events and submit the exact canonical stored URL. Removing a draft never deletes a file.
+- Scope optional upload-form context to route/query changes without renaming, decoding or transcoding multipart filenames. Add named/autocomplete inputs, native form/Enter handling, disabled in-flight controls, 44px targets and reduced-motion support while preserving glass variables and homepage motion.
+- Add43 regression tests and pass877 local tests (292 backend,585 frontend), zero-warning lint, frozen install, production build/audit and background API/built-asset HTTP checks. No browser/computer use, dependency-resolution, schema, production-data, stored-upload, UTF-8, timestamp or IP-provider changes.
+
 ## 2.0.24 — 2026-10-05
 
 - Replace vague homepage/community slogans with concrete content and action labels. Distinguish website registration from formal membership; keep original works, nicknames, chronology and the formal invitation's existing rules. Avoid choosing between the conflicting2014/2015 founding claims.

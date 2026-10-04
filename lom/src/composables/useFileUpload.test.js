@@ -103,6 +103,25 @@ describe('bounded upload rejection feedback', () => {
 });
 
 describe('client upload filename identity', () => {
+  it.each(['route', 'route-return'])('ignores old uploads after a form context change (%s)', async (kind) => {
+    const path = ref('/register?draft=first'),
+      pending = deferred();
+    fixtures.upload.mockReturnValueOnce(pending.promise);
+    const avatar = ref(''),
+      files = ref([]);
+    const upload = helper(avatar, files, { context: () => path.value });
+    const options = uploadOptions(),
+      running = upload.customUpload(options);
+    path.value = '/register?draft=second';
+    if (kind === 'route-return') path.value = '/register?draft=first';
+    expect(upload.isUploading.value).toBe(false);
+    pending.resolve({ data: { url: '/api/upload/7/1720000000000_中文.pdf', filename: '1720000000000_中文.pdf' } });
+    await running;
+    expect(avatar.value).toBe('');
+    expect(files.value).toEqual([]);
+    expect(options.onFinish).not.toHaveBeenCalled();
+    expect(fixtures.success).not.toHaveBeenCalled();
+  });
   it.each(['中文论文.pdf', '100%.pdf', '%E4%B8%AD.pdf', '世界🧱.pdf'])(
     'uploads %s unchanged and lists the actual server filename',
     async (name) => {
