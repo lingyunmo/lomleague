@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.13 — 2026-10-04
+
+- Add a locally computed Minecraft coordinate tool linked from the homepage server card: exact 8:1 Overworld/Nether X/Z conversion, source-dimension chunk indices, 0–15 local positions and block ranges.
+- Handle negative coordinates with mathematical floor division and preserve fractional portal coordinates instead of silently rounding. Validate integer input and supported calculation bounds; expose server/custom-ratio/portal-pairing limitations and primary rule references.
+- Use a theme-aware responsive layout, native labeled controls, precise clipboard text, manual-copy fallback and an accessible chunk map. No login, coordinate storage, game-server connection or new dependencies.
+- Add coordinate-boundary/property and UI/clipboard regression tests. Existing database data, upload names, timestamps and business permissions are unchanged.
+
 ## 2.0.12 — 2026-10-04
 
 - Coalesce like-count and personal-status reads across cards in the same render burst, instead of sending separate requests per card. Deduplicate identities and split batches at 100 items; retain no response cache.

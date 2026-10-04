@@ -54,6 +54,9 @@
             状态来源 mcsrvstat.us · 最长 5 分钟缓存
             <button :disabled="statusLoading" @click="loadStatus">{{ statusLoading ? '查询中' : '刷新' }}</button>
           </p>
+          <router-link to="/tools/coordinates" class="card-bottom-link"
+            >主世界 / 下界坐标工具 <span>↗</span></router-link
+          >
         </article>
         <article class="workspace-card community-card">
           <div class="card-top">
