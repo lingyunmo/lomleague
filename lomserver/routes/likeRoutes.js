@@ -9,6 +9,24 @@ import LikeService from '../services/likeService.js';
 
 const router = express.Router();
 
+function readBatch(body) {
+  const { entityType, entityIds } = body || {};
+  if (
+    !['post', 'reply', 'article'].includes(entityType) ||
+    !Array.isArray(entityIds) ||
+    entityIds.length > 100 ||
+    entityIds.some((id) => !Number.isSafeInteger(id) || id < 1 || id > 2_147_483_647)
+  ) return null;
+  return { entityType, entityIds: [...new Set(entityIds)] };
+}
+
+// Public counts only, using the existing entity/id index. No personal status is returned.
+router.post('/batch-counts', asyncHandler(async (req, res) => {
+  const batch = readBatch(req.body);
+  if (!batch) return res.status(400).json({ message: '无效的点赞查询参数（最多 100 项）' });
+  res.json(await LikeService.getBatchCounts(batch.entityType, batch.entityIds));
+}));
+
 // POST /toggle — 切换点赞状态
 router.post('/toggle', authMiddleware, asyncHandler(async (req, res) => {
   const { entityType, entityId } = req.body;
@@ -46,8 +64,10 @@ router.get('/status', authMiddleware, asyncHandler(async (req, res) => {
 
 // POST /batch-status
 router.post('/batch-status', authMiddleware, asyncHandler(async (req, res) => {
-  const { entityType, entityIds } = req.body;
-  const result = await LikeService.getBatchStatus(req.user.id, entityType, entityIds);
+  const batch = readBatch(req.body);
+  if (!batch) return res.status(400).json({ message: '无效的点赞查询参数（最多 100 项）' });
+  const result = await LikeService.getBatchStatus(req.user.id, batch.entityType, batch.entityIds);
+  res.set('Cache-Control', 'no-store');
   res.json(result);
 }));
 

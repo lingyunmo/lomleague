@@ -63,6 +63,10 @@ class LikeService {
     return LikeDao.getCount(entityType, entityId);
   }
 
+  static async getBatchCounts(entityType, entityIds) {
+    return { counts: await LikeDao.getBatchCounts(entityType, entityIds) };
+  }
+
   static async getUserStatus(userId, entityType, entityId) {
     const liked = await LikeDao.getUserLikeStatus(userId, entityType, entityId);
     return { liked };

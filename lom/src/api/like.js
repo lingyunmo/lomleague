@@ -15,6 +15,11 @@ export const likeApi = {
     return client.get('/likes/count', { params: { entityType, entityId } });
   },
 
+  /** 批量获取公开点赞数 */
+  getBatchCounts(entityType, entityIds) {
+    return client.post('/likes/batch-counts', { entityType, entityIds });
+  },
+
   /** 获取当前用户点赞状态 */
   getStatus(entityType, entityId) {
     return client.get('/likes/status', { params: { entityType, entityId } });

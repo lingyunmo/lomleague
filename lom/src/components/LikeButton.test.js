@@ -11,6 +11,11 @@ const calls = vi.hoisted(() => ({
 }));
 vi.mock('../composables/useAuth.js', () => ({ useAuth: calls.auth }));
 vi.mock('../api/like.js', () => ({ likeApi: calls }));
+// Component identity races are independent of transport coalescing, tested in likeReads.test.js.
+vi.mock('../utils/likeReads.js', () => ({
+  loadLikeCount: async (...args) => (await calls.getCount(...args)).data.count,
+  loadLikeStatus: async (type, id) => (await calls.getStatus(type, id)).data.liked,
+}));
 vi.mock('naive-ui', () => ({ useMessage: () => ({ error: calls.error }) }));
 let wrappers, auth;
 beforeEach(() => {

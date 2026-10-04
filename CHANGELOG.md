@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.0.12 — 2026-10-04
+
+- Coalesce like-count and personal-status reads across cards in the same render burst, instead of sending separate requests per card. Deduplicate identities and split batches at 100 items; retain no response cache.
+- Check the current login session both before sending and after receiving personal status. Previous-session results remain unable to change the current buttons; anonymous visitors read only public counts.
+- Add a bounded public count endpoint backed by one grouped query on the existing like index. Validate both batch endpoints and mark personal responses no-store. Existing single-item APIs, toggle behavior and notifications remain unchanged.
+- Cover component/transport races, invalid input, authentication and actual MySQL count/member separation. No schema migration or upload/filename changes.
+
 ## 2.0.11 — 2026-10-04
 
 - Prevent late initial like reads from overwriting successful toggles. Reload when the entity or login session changes, ignore stale/unmounted results and errors, and preserve overlapping-click protection and existing like rules.

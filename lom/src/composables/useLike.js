@@ -7,9 +7,10 @@
 import { ref } from 'vue';
 import { likeApi } from '../api/like.js';
 import { useAuth } from './useAuth.js';
+import { loadLikeCount, loadLikeStatus } from '../utils/likeReads.js';
 
 export function useLike() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, token } = useAuth();
   const loading = ref(false);
   const error = ref(null);
 
@@ -35,23 +36,13 @@ export function useLike() {
 
   /** 获取点赞数 */
   async function getLikeCount(entityType, entityId) {
-    try {
-      const res = await likeApi.getCount(entityType, entityId);
-      return res.data.count;
-    } catch {
-      return 0;
-    }
+    return loadLikeCount(entityType, entityId);
   }
 
   /** 获取当前用户点赞状态 */
   async function getLikeStatus(entityType, entityId) {
     if (!isLoggedIn.value) return false;
-    try {
-      const res = await likeApi.getStatus(entityType, entityId);
-      return res.data.liked;
-    } catch {
-      return false;
-    }
+    return loadLikeStatus(entityType, entityId, () => token.value);
   }
 
   /** 批量加载点赞状态 */

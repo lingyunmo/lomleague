@@ -99,6 +99,18 @@ describe.skipIf(!testDatabaseUrl)('isolated MySQL application integration', () =
     expect(notifications.status).toBe(200);
     expect(notifications.data.unreadCount).toBeGreaterThan(0);
   });
+  it('preserves count and member identity in real MySQL batch reads', async () => {
+    const absent = 2_147_483_647;
+    const body = { entityType: 'post', entityIds: [post.id, absent] };
+    const counts = await request('/likes/batch-counts', { method: 'POST', body });
+    expect(counts.status).toBe(200);
+    expect(counts.data).toEqual({ counts: { [post.id]: 1, [absent]: 0 } });
+    const bobStatus = await request('/likes/batch-status', { method: 'POST', token: bob.token, body });
+    const aliceStatus = await request('/likes/batch-status', { method: 'POST', token: alice.token, body });
+    expect(bobStatus.data).toEqual({ likedIds: [post.id] });
+    expect(aliceStatus.data).toEqual({ likedIds: [] });
+    expect((await request('/likes/batch-status', { method: 'POST', body })).status).toBe(401);
+  });
   it('rewards check-in only once per business day', async () => {
     const first = await request('/user/checkin', { method: 'POST', token: alice.token });
     expect(first.status).toBe(200);

@@ -9,7 +9,15 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.11 (not yet released)
+## Working batch: 2.0.12 (not yet released)
+
+- Version 2.0.11 is released: GitHub-verified commit edbb3e0cade706a8dd09ec1acb5c4fdb5910dc94, successful Actions run 37182410713 and matching live health/footer. The actual Verified badge and live footer were checked in the browser.
+- A browser baseline on twenty rendered cards recorded twenty count requests and twenty personal-status requests. Coalesce only the same render burst, deduplicate ids and send at most one hundred per request; no public count or personal result cache is retained.
+- The public count endpoint uses a grouped read on the existing like index, and both batch routes validate bounded positive integer ids. Personal state uses authenticated user identity, is marked no-store and is guarded against queued/in-flight session changes. Toggle rules, notification creation, single-item endpoints, schema and uploads remain unchanged.
+- Targeted unit/component tests and actual MySQL member-separation checks passed. Full checks passed: 284 tests (120 backend, 164 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.12.
+- Browser comparison on the built authenticated twenty-card page confirmed one batch-counts and one batch-status request, versus forty single reads before the change. Existing visible counts remained correct. The temporary network observer was disabled after validation; production is not changed until CI and live revision checks succeed.
+
+## Previous release batches
 
 - Version 2.0.10 is released: GitHub-verified commit f4ed26754e93a7a03292a63b6301345b77e3fb89, successful Actions run 37181627235 and matching live health/footer. The actual successful workflow summary, Verified badge and live footer were checked in the browser.
 - Two like-button regressions failed against the previous code: late initial reads overwrote a completed toggle, and logout without remounting retained the previous member's liked state. Guard entity/session/request identity, invalidate on unmount and reload after an unsuccessful toggle; existing business rules and duplicate-click protection remain unchanged.
@@ -17,8 +25,6 @@
 - Appearance controls have named switches and native keyboard color buttons with pressed state, visible focus and 44px targets. Preset values and preference persistence are unchanged.
 - Twenty-eight targeted regressions passed, including actual Naive UI switch semantics. Full checks passed: 240 tests (99 backend, 141 frontend), zero-warning lint, production build, production dependency audit and actual read-only smoke at local-preview-v2.0.11.
 - Production-build browser acceptance passed: search/page two/ten-per-page are restored by the detail return button; direct-link return falls back to the default forum; timestamp/Unicode/percent attachment labels remain exact. Enter selects a color, Space toggles the named dark-mode switch, and all color targets measure 44px. The 390px light layout and open popover have no horizontal overflow. Original local preferences and temporary viewport overrides were restored. Screenshot: lomleague-2.0.11-mobile-appearance.jpg in the task output directory.
-
-## Previous release batches
 
 - Version 2.0.9 is released: GitHub-verified commit 9a4f3f5fe0c98a897cefb6fbd3c7d080981ecf36, successful Actions run 37181064006 and matching live health/footer. The actual Verified badge and new public community page with both original posts were checked in the browser. Screenshot: lomleague-2.0.9-community.jpg in the task output directory.
 - Two avatar-frame regressions failed against the previous code: a response arriving after the 100ms recheck never updated the frame, and three component instances made three separate requests instead of one deduplicated batch.
@@ -78,7 +84,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 79570 at port 3000, test DB port 13306, revision `local-preview-v2.0.11`. The actual read-only smoke script passed against it. The previous owned process session 85206 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
+- Backend preview process session 63510 at port 3000, test DB port 13306, revision `local-preview-v2.0.12`. The actual read-only smoke script passed against it. The previous owned process session 79570 was stopped. Browser production-preview login/logout, attachment identity, active-document isolation, native PDF viewing, pagination, retry, restorable URL state and deduplicated public frame reads passed.
 - Production Vite preview session 44856 at `http://127.0.0.1:4173`. Previous owned session 5574 exited; its port was confirmed free before restart.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.
