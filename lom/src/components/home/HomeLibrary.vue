@@ -1,13 +1,13 @@
 <template>
   <section id="explore" class="library home-section">
-    <div class="section-heading">
+    <div class="section-heading" data-reveal>
       <div>
         <p class="eyebrow">02 / CREATIVE ARCHIVE</p>
         <h2>每一个世界，都有故事。</h2>
       </div>
       <span class="section-note">留下作品，也留下我们。</span>
     </div>
-    <div class="library-tools">
+    <div class="library-tools" data-reveal>
       <div class="library-tabs" role="group" aria-label="作品分类">
         <button v-for="tab in tabs" :key="tab.key" :aria-pressed="kind === tab.key" @click="kind = tab.key">
           {{ tab.label }}
@@ -18,7 +18,16 @@
         ><input v-model="query" type="search" placeholder="搜索作品、模组、成员" aria-label="搜索联盟档案"
       /></label>
     </div>
-    <div class="archive-grid" aria-live="polite">
+    <TransitionGroup
+      tag="div"
+      name="archive-change"
+      class="archive-grid"
+      aria-live="polite"
+      data-reveal
+      @before-leave="prepareLeave"
+      @before-enter="prepareEnter"
+      @leave-cancelled="prepareEnter"
+    >
       <a
         v-for="item in results"
         :key="item.id"
@@ -28,7 +37,7 @@
         class="archive-card"
         :class="`archive-${item.kind}`"
       >
-        <div class="archive-art">
+        <div class="archive-art" data-depth>
           <span class="archive-glyph" aria-hidden="true">{{ item.glyph }}</span
           ><span class="archive-index">{{ item.label }}</span
           ><span class="archive-arrow" aria-hidden="true">↗</span>
@@ -39,7 +48,7 @@
           <p>{{ item.description }}</p>
         </div>
       </a>
-    </div>
+    </TransitionGroup>
     <p v-if="!results.length" class="library-empty">
       没有找到“{{ query }}”。试试成员名或作品名。<button
         @click="
@@ -50,8 +59,8 @@
         清除筛选
       </button>
     </p>
-    <p class="archive-hint">影像和成员主页在新标签页打开；主页不会自动加载第三方播放器。</p>
-    <details class="history-details">
+    <p class="archive-hint" data-reveal>影像和成员主页在新标签页打开；主页不会自动加载第三方播放器。</p>
+    <details class="history-details" data-reveal>
       <summary>
         打开完整的联盟历史档案 <span>2015 — 2025 / {{ youkuHighlights.length }} 条记录</span>
       </summary>
@@ -59,7 +68,7 @@
         <li v-for="record in youkuHighlights" :key="record">{{ record }}</li>
       </ul>
     </details>
-    <details class="history-details">
+    <details class="history-details" data-reveal>
       <summary>
         模组版本与内容记录 <span>{{ modVersions.length }} 个历史版本</span>
       </summary>
@@ -70,7 +79,7 @@
         <li v-for="feature in modFeatures" :key="feature">{{ feature }}</li>
       </ul>
     </details>
-    <details class="history-details">
+    <details class="history-details" data-reveal>
       <summary>
         凯雷的系列作品 <span>{{ kaileiCategories.length }} 个系列</span>
       </summary>
@@ -86,7 +95,7 @@
         >
       </div>
     </details>
-    <details class="history-details">
+    <details class="history-details" data-reveal>
       <summary>
         曾为联盟留下大量视频的朋友 <span>{{ formerMembers.length }} 位创作者</span>
       </summary>
@@ -117,6 +126,19 @@ import {
 import { currentMembers, formerMembers } from '../../data/members.js';
 const kind = ref('all');
 const query = ref('');
+function prepareLeave(element) {
+  // Retiring filter results cannot remain keyboard/click targets during the fade.
+  element.style.width = `${element.offsetWidth}px`;
+  element.style.left = `${element.offsetLeft}px`;
+  element.style.top = `${element.offsetTop}px`;
+  element.inert = true;
+  element.setAttribute('aria-hidden', 'true');
+}
+function prepareEnter(element) {
+  for (const property of ['width', 'left', 'top']) element.style.removeProperty(property);
+  element.inert = false;
+  element.removeAttribute('aria-hidden');
+}
 const tabs = [
   { key: 'all', label: '精选档案' },
   { key: 'film', label: '原创影像' },
@@ -187,6 +209,10 @@ const results = computed(() => {
   flex-wrap: wrap;
 }
 .library-tabs button {
+  transition:
+    background 200ms,
+    color 200ms,
+    border-color 200ms;
   padding: 10px 16px;
   border: 1px solid transparent;
   background: transparent;
@@ -220,9 +246,26 @@ input {
   min-width: 0;
 }
 .archive-grid {
+  position: relative;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 22px;
+}
+.archive-change-move,
+.archive-change-enter-active,
+.archive-change-leave-active {
+  transition:
+    transform 450ms var(--motion-ease, ease),
+    opacity 300ms;
+}
+.archive-change-enter-from,
+.archive-change-leave-to {
+  opacity: 0;
+  transform: translateY(14px) scale(0.97);
+}
+.archive-change-leave-active {
+  position: absolute;
+  pointer-events: none;
 }
 .archive-card {
   color: inherit;
@@ -230,6 +273,9 @@ input {
   min-width: 0;
 }
 .archive-art {
+  transition:
+    transform 400ms var(--motion-ease, ease),
+    border-color 300ms;
   aspect-ratio: 1.85;
   background: var(--glass-bg);
   backdrop-filter: var(--glass-blur);
@@ -243,6 +289,11 @@ input {
   align-items: center;
   justify-content: center;
 }
+.archive-art.depth-active {
+  transform: perspective(900px) rotateX(calc(var(--depth-y, 0) * -3deg)) rotateY(calc(var(--depth-x, 0) * 3deg));
+  transition-duration: 160ms;
+  border-color: var(--color-brand-primary);
+}
 .archive-art::after {
   content: '';
   position: absolute;
@@ -252,10 +303,12 @@ input {
   transform: rotate(-30deg);
   transition: transform 0.4s;
 }
-.archive-card:hover .archive-art::after {
+.archive-card:hover .archive-art::after,
+.archive-card:focus-visible .archive-art::after {
   transform: rotate(-10deg) scale(1.2);
 }
 .archive-glyph {
+  transition: transform 400ms var(--motion-ease, ease);
   color: var(--color-portal-accent);
   font:
     48px ui-monospace,
@@ -273,11 +326,20 @@ input {
   color: var(--color-text-secondary);
 }
 .archive-arrow {
+  transition: transform 300ms var(--motion-ease, ease);
   position: absolute;
   top: 12px;
   right: 16px;
   font-size: 24px;
   color: var(--color-portal-accent);
+}
+.archive-card:hover .archive-glyph,
+.archive-card:focus-visible .archive-glyph {
+  transform: translateY(-6px) scale(1.08);
+}
+.archive-card:hover .archive-arrow,
+.archive-card:focus-visible .archive-arrow {
+  transform: translate(3px, -3px);
 }
 .archive-project .archive-glyph,
 .archive-project .archive-arrow {
@@ -403,8 +465,12 @@ ul {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .archive-art::after {
-    transition: none;
+  *,
+  *::after {
+    transition: none !important;
+  }
+  .archive-art.depth-active {
+    transform: none;
   }
 }
 </style>

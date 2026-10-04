@@ -1,17 +1,22 @@
 <template>
-  <div class="portal">
-    <section class="hero home-section">
+  <div ref="portal" class="portal">
+    <section class="hero home-section" data-motion-scene>
       <div class="hero-copy">
-        <p class="eyebrow"><span class="tiny-block" /> LEGACY OF MINECRAFT LEAGUE</p>
-        <h1>一起，把世界<br /><span>建得更大。</span></h1>
-        <p class="hero-description">
+        <p class="eyebrow hero-enter" style="--enter-step: 0"><span class="tiny-block" /> LEGACY OF MINECRAFT LEAGUE</p>
+        <h1>
+          <span class="hero-line"><span class="hero-line-text" style="--enter-step: 1">一起，把世界</span></span
+          ><span class="hero-line hero-title-accent"
+            ><span class="hero-line-text" style="--enter-step: 2">建得更大。</span></span
+          >
+        </h1>
+        <p class="hero-description hero-enter" style="--enter-step: 3">
           从第一块方块，到属于我们的世界。<br />这里是 lom 联盟，一群热爱创造的人的长期存档。
         </p>
-        <div class="hero-actions">
+        <div class="hero-actions hero-enter" style="--enter-step: 4">
           <router-link to="/forums" class="portal-button primary">进入社区 <span>↗</span></router-link
           ><a href="#explore" class="portal-button secondary">探索我们的作品 <span>↓</span></a>
         </div>
-        <div class="hero-footnote">
+        <div class="hero-footnote hero-enter" style="--enter-step: 5">
           <span>SINCE <strong>2014</strong></span
           ><span>{{ years }} 年的故事，仍在继续</span>
         </div>
@@ -19,12 +24,12 @@
       <BlockWorld />
     </section>
 
-    <div class="portal-divider">
-      <span>BUILD. PLAY. CREATE. TOGETHER.</span><span>一个联盟，无限可能 <i>✳</i></span>
+    <div class="portal-divider" data-reveal data-motion-scene>
+      <span>BUILD. PLAY. CREATE. TOGETHER.</span><span>一个联盟，无限可能 <i data-ambient>✳</i></span>
     </div>
 
     <section class="home-section workspace">
-      <div class="section-heading">
+      <div class="section-heading" data-reveal>
         <div>
           <p class="eyebrow">01 / YOUR NEXT ADVENTURE</p>
           <h2>今天，从这里出发。</h2>
@@ -32,7 +37,7 @@
         <router-link to="/invite" class="text-link">成为其中一员 ↗</router-link>
       </div>
       <div class="workspace-grid">
-        <article class="workspace-card server-card">
+        <article class="workspace-card server-card" data-reveal data-depth>
           <div class="card-top">
             <span class="card-code">WORLD / 01</span
             ><span class="server-status" :class="{ online: server.online === true && !server.stale }" role="status"
@@ -59,7 +64,7 @@
           >
           <router-link to="/tools/materials" class="card-bottom-link">建造用料 / 储存换算 <span>↗</span></router-link>
         </article>
-        <article class="workspace-card community-card">
+        <article class="workspace-card community-card" data-reveal data-depth style="--reveal-delay: 90ms">
           <div class="card-top">
             <span class="card-code">COMMUNITY / 02</span><span class="card-code">留下你的声音</span>
           </div>
@@ -77,7 +82,7 @@
           </div>
           <router-link to="/forums" class="card-bottom-link">打开社区论坛 <span>↗</span></router-link>
         </article>
-        <article class="workspace-card member-card">
+        <article class="workspace-card member-card" data-reveal data-depth style="--reveal-delay: 180ms">
           <div class="card-top">
             <span class="card-code">MEMBER / 03</span><span class="card-code">每天都有小惊喜</span>
           </div>
@@ -106,12 +111,12 @@
     <HomeLibrary />
 
     <section class="home-section toolbox">
-      <div>
+      <div data-reveal>
         <p class="eyebrow">03 / READY TO PLAY</p>
         <h2>准备好，开始创造。</h2>
         <p>选择熟悉的启动器，下载请认准项目官方页面。</p>
       </div>
-      <div class="launcher-links">
+      <div class="launcher-links" data-reveal style="--reveal-delay: 100ms">
         <a
           v-for="launcher in launchers"
           :key="launcher.name"
@@ -123,11 +128,11 @@
         >
       </div>
     </section>
-    <section class="home-section closing">
-      <p class="eyebrow">THE STORY IS STILL LOADING.</p>
-      <h2>故事还没结束。<br />我们，下个世界见。</h2>
-      <router-link to="/about" class="text-link">翻开曾经的我们 ↗</router-link
-      ><span class="closing-mark" aria-hidden="true">lom.</span>
+    <section class="home-section closing" data-motion-scene>
+      <p class="eyebrow" data-reveal>THE STORY IS STILL LOADING.</p>
+      <h2 data-reveal>故事还没结束。<br />我们，下个世界见。</h2>
+      <router-link to="/about" class="text-link" data-reveal>翻开曾经的我们 ↗</router-link
+      ><span class="closing-mark" aria-hidden="true" data-ambient>lom.</span>
     </section>
   </div>
 </template>
@@ -141,7 +146,10 @@ import client from '../api/client.js';
 import { forumApi } from '../api/forum.js';
 import { userApi } from '../api/user.js';
 import { useAuthStore } from '../stores/authStore.js';
+import { useHomeMotion } from '../composables/useHomeMotion.js';
 
+const portal = ref(null);
+useHomeMotion(portal);
 const auth = useAuthStore();
 const message = useMessage();
 const years = new Date().getFullYear() - 2014;
@@ -236,11 +244,36 @@ onUnmounted(() => {
 
 <style>
 .portal {
+  --motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --portal-line: color-mix(in srgb, var(--color-text-primary) 13%, transparent);
   --portal-surface: var(--glass-bg);
   background: transparent;
   color: var(--color-text-primary);
   font-family: Inter, 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+.portal[data-motion='on'] [data-reveal] {
+  transition:
+    opacity 700ms var(--motion-ease),
+    transform 700ms var(--motion-ease);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+.portal[data-motion='on'] .reveal-pending {
+  opacity: 0;
+  transform: translateY(28px);
+}
+.portal.motion-paused *,
+.portal.motion-paused *::before,
+.portal.motion-paused *::after,
+.portal .scene-paused *,
+.portal .scene-paused *::before,
+.portal .scene-paused *::after {
+  animation-play-state: paused !important;
+}
+.portal[data-motion='off'] *,
+.portal[data-motion='off'] *::before,
+.portal[data-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
 }
 .home-section {
   max-width: 1240px;
@@ -326,8 +359,45 @@ h1 {
   letter-spacing: -3px;
   margin: 30px 0 25px;
 }
-h1 span {
+.hero-title-accent {
   color: var(--color-portal-accent);
+}
+.hero-line {
+  display: block;
+  overflow: clip;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+.hero-line-text {
+  display: block;
+}
+.portal[data-motion='on'] .hero-line-text {
+  animation: title-arrive 1050ms var(--motion-ease) both;
+  animation-delay: calc(var(--enter-step) * 110ms);
+}
+.portal[data-motion='on'] .hero-enter {
+  animation: copy-arrive 850ms var(--motion-ease) both;
+  animation-delay: calc(var(--enter-step) * 110ms);
+}
+@keyframes title-arrive {
+  from {
+    transform: translateY(110%) rotate(2deg);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) rotate(0);
+    opacity: 1;
+  }
+}
+@keyframes copy-arrive {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 .hero-description {
   font-size: 14px;
@@ -349,10 +419,30 @@ h1 span {
   font-weight: 600;
   text-decoration: none;
   border-radius: 5px;
-  transition: transform 0.2s;
+  transition:
+    transform 250ms var(--motion-ease),
+    box-shadow 250ms;
 }
-.portal-button:hover {
-  transform: translateY(-2px);
+.portal-button:hover,
+.portal-button:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--color-brand-primary) 16%, transparent);
+}
+.portal-button span,
+.card-bottom-link span,
+.launcher-links span {
+  transition: transform 250ms var(--motion-ease);
+}
+.portal-button:hover span,
+.portal-button:focus-visible span,
+.card-bottom-link:hover span,
+.card-bottom-link:focus-visible span,
+.launcher-links a:hover span,
+.launcher-links a:focus-visible span {
+  transform: translate(3px, -3px);
+}
+.portal-button:active {
+  transform: translateY(0) scale(0.98);
 }
 .primary {
   background: var(--color-portal-accent);
@@ -390,10 +480,17 @@ h1 span {
   color: var(--color-text-muted);
 }
 .portal-divider i {
+  display: inline-block;
+  animation: compass-turn 22s linear infinite;
   font-size: 20px;
   color: var(--color-portal-accent);
   font-style: normal;
   margin-left: 16px;
+}
+@keyframes compass-turn {
+  to {
+    transform: rotate(360deg);
+  }
 }
 .workspace-grid {
   margin-top: 30px;
@@ -402,6 +499,9 @@ h1 span {
   gap: 16px;
 }
 .workspace-card {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
   padding: 24px;
   border: 1px solid var(--glass-border);
   border-radius: var(--glass-radius);
@@ -411,6 +511,30 @@ h1 span {
   min-width: 0;
   display: flex;
   flex-direction: column;
+}
+.workspace-card::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  width: 240px;
+  height: 240px;
+  left: calc(50% - 120px);
+  top: calc(35% - 120px);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-brand-primary) 14%, transparent), transparent 68%);
+  opacity: 0;
+  transform: translate(calc(var(--depth-x, 0) * 90px), calc(var(--depth-y, 0) * 90px));
+  transition: opacity 300ms;
+}
+.workspace-card.depth-active::before,
+.workspace-card:focus-within::before {
+  opacity: 1;
+}
+.portal[data-motion='on'] .workspace-card.depth-active:not(.reveal-pending) {
+  transform: perspective(1000px) rotateX(calc(var(--depth-y, 0) * -1.5deg)) rotateY(calc(var(--depth-x, 0) * 1.5deg))
+    translateY(-4px);
+  transition-duration: 180ms;
+  transition-delay: 0ms;
 }
 .card-top {
   display: flex;
@@ -597,6 +721,9 @@ h1 span {
   gap: 12px;
 }
 .launcher-links a {
+  transition:
+    transform 250ms var(--motion-ease),
+    border-color 250ms;
   color: var(--color-text-primary);
   text-decoration: none;
   display: flex;
@@ -608,6 +735,11 @@ h1 span {
   backdrop-filter: var(--glass-blur);
   padding: 18px;
   font-size: 13px;
+}
+.launcher-links a:hover,
+.launcher-links a:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--color-brand-primary);
 }
 .launcher-links span {
   color: var(--color-text-muted);
@@ -624,6 +756,7 @@ h1 span {
   font-size: 38px;
 }
 .closing-mark {
+  animation: closing-drift 10s ease-in-out infinite;
   position: absolute;
   right: 30px;
   bottom: 45px;
@@ -633,6 +766,11 @@ h1 span {
   color: var(--color-text-primary);
   opacity: 0.06;
   pointer-events: none;
+}
+@keyframes closing-drift {
+  50% {
+    transform: translate(-8px, -8px) rotate(-2deg);
+  }
 }
 @media (max-width: 1000px) {
   .portal-divider {
@@ -703,8 +841,15 @@ h1 span {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .portal-button {
-    transition: none;
+  .portal *,
+  .portal *::before,
+  .portal *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .portal .reveal-pending {
+    opacity: 1;
+    transform: none;
   }
 }
 </style>
