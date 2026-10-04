@@ -62,4 +62,51 @@ describe('real multipart upload → disk → returned URL', () => {
     const response = await fetch(`${baseUrl}/api/file/upload`, { method: 'POST' });
     expect(response.status).toBe(401);
   });
+  it.each(['中文论文.pdf', '100%.pdf', '%E4%B8%AD.pdf', '世界🧱.pdf'])(
+    'accepts the advertised PDF format and preserves %s end to end',
+    async (name) => {
+      const bytes = '%PDF-1.4\nlocal-fixture\n%%EOF';
+      const body = new FormData();
+      body.append('file', new Blob([bytes], { type: 'application/pdf' }), name);
+      const response = await fetch(`${baseUrl}/api/file/upload`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body,
+      });
+      expect(response.status).toBe(200);
+      const data = await response.json();
+      expect(data.filename).toMatch(/^\d+_/);
+      expect(data.filename.replace(/^\d+_/, '')).toBe(name);
+      expect(data.url).toBe(`/api/upload/7/${encodeURIComponent(data.filename)}`);
+      expect(await readFile(path.join(directory, '7', data.filename), 'utf8')).toBe(bytes);
+      const download = await fetch(`${baseUrl}${data.url}`);
+      expect(download.status).toBe(200);
+      expect(download.headers.get('content-type')).toContain('application/pdf');
+      expect(await download.text()).toBe(bytes);
+    },
+  );
+  it('still rejects unsupported MIME types without leaving a stored file', async () => {
+    const before = await readdir(path.join(directory, '7'));
+    const body = new FormData();
+    body.append('file', new Blob(['fixture'], { type: 'text/html' }), 'unsafe.html');
+    const response = await fetch(`${baseUrl}/api/file/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    expect(response.status).toBe(400);
+    expect(await readdir(path.join(directory, '7'))).toEqual(before);
+  });
+  it('still enforces the 10 MB limit and removes rejected partial uploads', async () => {
+    const before = await readdir(path.join(directory, '7'));
+    const body = new FormData();
+    body.append('file', new Blob([new Uint8Array(10 * 1024 * 1024 + 1)], { type: 'application/pdf' }), 'large.pdf');
+    const response = await fetch(`${baseUrl}/api/file/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body,
+    });
+    expect(response.status).toBe(400);
+    expect(await readdir(path.join(directory, '7'))).toEqual(before);
+  });
 });

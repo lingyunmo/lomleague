@@ -9,7 +9,12 @@
 - Batch local tests and builds before pushing. Verify Actions, the commit signature, and the live page after release.
 - The indefinite goal remains active. A thread heartbeat named “lomleague 持续重构与发布” runs every 30 minutes. It requires the desktop app and host to remain running; quota availability still governs execution.
 
-## Working batch: 2.0.4 (not yet released)
+## Working batch: 2.0.5 (not yet released)
+
+- Version 2.0.4 is released: signed commit d663cfecb1073f888d1c2452da9924a254a858e6, successful Actions run 37170314796, live /api/health reports the matching version and revision. The redesigned homepage and existing production forum links were verified in the browser.
+- Next batch fixes attachment labels/download filenames that previously stripped the business timestamp or displayed URI escapes. URL segments alone decode once; no stored filename or database mapping changes.
+- The frontend already advertised PDF uploads but both MIME filters rejected them. They now agree on application/pdf while preserving authentication, avatar restrictions and 10 MB limits. All 124 tests (73 backend, 51 frontend), lint (zero errors, 12 existing warnings), production build, production dependency audit and read-only local smoke passed.
+- A real local HTTP upload of 中文论文100% %E4%B8%AD.png preserved its name plus the timestamp and returned identical bytes. Its synthetic forum post 13 renders the exact stored filename and image correctly in the production-build preview. Browser file-chooser upload itself remains unverified because the extension's local-file permission is off; do not change that permission or ask the sleeping user. Existing HTTP and component regressions cover transmission and callback/list identity.
 
 - New responsive homepage, code-native isometric block world, searchable film/project/member archive, preserved historical records, check-in, and real cached Minecraft status.
 - Vite 8, Vue and compatible dependency updates, Vitest 5, ESLint 10, Multer 2.4.
@@ -36,7 +41,7 @@
 ## Current processes
 
 - Vite dev process session 46686 at `http://127.0.0.1:5173`.
-- Backend preview process session 88142 at port 3000, test DB port 13306, revision `local-preview-v2.0.3`. The actual read-only smoke script passed against it. Browser production-preview logout correctly removes cached identity and updates navigation/member UI.
+- Backend preview process session 34526 at port 3000, test DB port 13306, revision `local-preview-v2.0.5`. The actual read-only smoke script passed against it. The previous owned process session 88142 was stopped. Browser production-preview login/logout correctly updates navigation/member UI; attachment fixture rendering passed.
 - Production Vite preview session 5574 at `http://127.0.0.1:4173`.
 - Isolated MySQL process session 11299, data directory `C:\Users\yklom\AppData\Local\Temp\lom-mysql-test-c00778c409174aa8a11982d030fedec9`. Shut it down only through explicit `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=13306 --user=root shutdown`, not the existing MySQL80 Windows service. Leave the temporary directory until its contents are no longer needed.
 - These session ids may expire between runs: verify ownership/status before reuse. Do not start duplicate services on the same ports.

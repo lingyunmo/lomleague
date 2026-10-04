@@ -47,7 +47,7 @@ pnpm test
 pnpm build
 ```
 
-后端配置通过本地 `lomserver/.env` 提供，不要提交真实密钥。默认测试跳过依赖数据库的集成用例；完整集成测试需要 `LOM_TEST_DATABASE_URL` 指向单独的本地临时数据库。禁止使用生产数据库运行测试或 `prisma db push`。
+后端配置通过环境变量或现有本地 `.env` 配置提供，不要提交真实密钥。默认测试跳过依赖数据库的集成用例；完整集成测试需要 `LOM_TEST_DATABASE_URL` 指向单独的本地临时数据库。禁止使用生产数据库运行测试或 `prisma db push`。
 
 ## 发布安全
 

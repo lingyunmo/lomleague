@@ -4,14 +4,11 @@
       <n-icon><Attach /></n-icon> 附件：
     </h3>
     <div class="attachment-grid">
-      <div
-          v-for="(file, index) in files"
-          :key="index"
-          class="attachment-item"
-      >
+      <div v-for="(file, index) in files" :key="index" class="attachment-item">
         <!-- 图片类型 -->
         <template v-if="isImage(file)">
-          <img :src="file" class="attachment-img" alt="附件图片" />
+          <img :src="file" class="attachment-img" :alt="formatFileName(file)" loading="lazy" />
+          <div class="attachment-filename">{{ formatFileName(file) }}</div>
         </template>
 
         <!-- 音频类型 -->
@@ -28,11 +25,7 @@
 
         <!-- 其他文件类型 -->
         <template v-else>
-          <a
-              :href="file"
-              :download="formatFileName(file)"
-              class="attachment-link"
-          >
+          <a :href="file" :download="formatFileName(file)" class="attachment-link">
             <n-icon size="24"><Download /></n-icon>
             <div class="attachment-filename">{{ formatFileName(file) }}</div>
           </a>
@@ -43,35 +36,32 @@
 </template>
 
 <script setup>
-import { NIcon } from 'naive-ui'
-import { Attach, Download } from '@vicons/ionicons5'
+import { NIcon } from 'naive-ui';
+import { Attach, Download } from '@vicons/ionicons5';
+import { getAttachmentFilename } from '../utils/attachmentFilename.js';
 
-const props = defineProps({
+defineProps({
   files: {
     type: Array,
-    required: true
+    required: true,
   },
   isImage: {
     type: Function,
-    default: (file) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(file)
+    default: (file) => /\.(jpg|jpeg|png|gif|bmp|webp)$/i.test(getAttachmentFilename(file)),
   },
   isAudio: {
     type: Function,
-    default: (file) => /\.(mp3|wav|ogg)$/i.test(file)
+    default: (file) => /\.(mp3|wav|ogg)$/i.test(getAttachmentFilename(file)),
   },
   isVideo: {
     type: Function,
-    default: (file) => /\.(mp4|webm|ogg)$/i.test(file)
+    default: (file) => /\.(mp4|webm|ogg)$/i.test(getAttachmentFilename(file)),
   },
   formatFileName: {
     type: Function,
-    default: (file) => {
-      const parts = file.split('/')
-      const rawName = parts[parts.length - 1]
-      return rawName.replace(/^\d+_/, '')
-    }
-  }
-})
+    default: getAttachmentFilename,
+  },
+});
 </script>
 
 <style scoped>

@@ -24,6 +24,7 @@ export function createFileRouter(uploadDirectory = path.join(process.cwd(), 'upl
     'audio/wav',
     'video/mp4',
     'video/x-msvideo',
+    'application/pdf',
     'application/zip',
     'application/x-rar-compressed',
   ];

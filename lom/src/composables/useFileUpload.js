@@ -18,10 +18,17 @@ import { useMessage } from 'naive-ui';
 import { fileApi } from '../api/file.js';
 
 const DEFAULT_ALLOWED_TYPES = [
-  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
-  'audio/mpeg', 'audio/wav',
-  'video/mp4', 'video/x-msvideo',
-  'application/zip', 'application/x-rar-compressed',
+  'image/jpeg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+  'audio/mpeg',
+  'audio/wav',
+  'video/mp4',
+  'video/x-msvideo',
+  'application/pdf',
+  'application/zip',
+  'application/x-rar-compressed',
 ];
 const DEFAULT_MAX_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -63,7 +70,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
           ...(fileListRef.value || []),
           {
             uid: file.uid,
-            name: response.data.filename || (file.file?.name || file.name || 'file'),
+            name: response.data.filename || file.file?.name || file.name || 'file',
             url,
             status: 'finished',
           },
@@ -90,9 +97,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
       }
     }
     if (fileListRef.value) {
-      fileListRef.value = fileListRef.value.filter(
-        (item) => item.url !== url && item.uid !== file.uid,
-      );
+      fileListRef.value = fileListRef.value.filter((item) => item.url !== url && item.uid !== file.uid);
     }
     message.info('附件已移除');
   }
@@ -100,7 +105,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
   /** 附件是否全部上传完成 */
   const isReadyToSubmit = computed(() => {
     const val = attachmentsRef.value;
-    const attLen = Array.isArray(val) ? val.length : (val ? 1 : 0);
+    const attLen = Array.isArray(val) ? val.length : val ? 1 : 0;
     const listLen = fileListRef.value?.length || 0;
     return attLen === listLen;
   });

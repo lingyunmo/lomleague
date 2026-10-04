@@ -1,5 +1,11 @@
 # Changelog
 
+## 2.0.5 — 2026-10-04
+
+- Keep the complete stored attachment filename, including its timestamp, in display labels, image descriptions and download names. Decode the URL transport layer exactly once; literal percent sequences remain literal and no filename mapping is introduced.
+- Align the advertised PDF upload format across frontend and backend. Preserve existing authentication, image-only avatar restrictions and the 10 MB limit.
+- Add filename display/download, actual multipart PDF-to-disk-to-read, client upload identity, unsupported-format and size-limit regression tests. Existing database records and uploaded files are untouched.
+
 ## 2.0.4 — 2026-10-04
 
 - Remove obsolete nested frontend/backend lockfiles and workspace configurations. The root workspace now owns installation in every directory; the removed files remain recoverable in Git history.
