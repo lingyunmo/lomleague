@@ -62,12 +62,12 @@
       preset="card"
       style="width: min(760px, calc(100vw - 32px)); padding: 2px; border-radius: 16px; overflow: auto"
     >
-      <AddForum @created="handlePostCreated" @cancel="showAddPostModal = false" />
+      <AddForum v-if="showAddPostModal" @created="handlePostCreated" @cancel="showAddPostModal = false" />
     </n-modal>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
 import { Add, Search } from '@vicons/ionicons5';
@@ -95,22 +95,62 @@ const {
 } = usePaginatedFetch((params) => forumApi.getPosts(params));
 const { searchKeyword, onPageChange, refresh } = useListRouteQuery(pagination, fetchPosts);
 const showAddPostModal = ref(false);
+let generation = 0;
+let confirmationSequence = 0;
+let disposed = false;
+let pendingDialog;
+const context = () => ({ token: authStore.token, generation, fullPath: route.fullPath });
+const isCurrent = (request) =>
+  !disposed &&
+  route.name === 'Forums' &&
+  request.token === authStore.token &&
+  request.generation === generation &&
+  request.fullPath === route.fullPath;
+const resetPrivateState = () => {
+  generation++;
+  confirmationSequence++;
+  pendingDialog?.destroy();
+  pendingDialog = undefined;
+  showAddPostModal.value = false;
+};
+watch(
+  [() => authStore.token, () => authStore.isAdmin, () => authStore.user?.id, () => route.fullPath],
+  resetPrivateState,
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  disposed = true;
+  resetPrivateState();
+});
 const handlePostCreated = () => {
   showAddPostModal.value = false;
   refresh();
 };
 const confirmDeletePost = (postId) => {
-  dialog.warning({
+  if (
+    !authStore.token ||
+    (!authStore.isAdmin && !posts.value.some((post) => post.id === postId && post.userId === authStore.user?.id))
+  )
+    return;
+  pendingDialog?.destroy();
+  const sequence = ++confirmationSequence;
+  const request = context();
+  let confirmed = false;
+  pendingDialog = dialog.warning({
     title: '确认删除',
     content: '删除后无法恢复，确定删除此帖子？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
+      if (confirmed || sequence !== confirmationSequence || !isCurrent(request)) return;
+      confirmed = true;
       try {
         await forumApi.deletePost(postId);
+        if (!isCurrent(request)) return;
         message.success('帖子已删除');
         fetchPosts();
       } catch {
+        if (!isCurrent(request)) return;
         message.error('删除失败');
       }
     },

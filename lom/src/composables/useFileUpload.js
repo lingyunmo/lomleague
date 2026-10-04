@@ -11,11 +11,12 @@
  * @param {Object}   [constraints]           — 可选的文件限制
  * @param {string[]} [constraints.allowedTypes] — 允许的 MIME 类型
  * @param {number}   [constraints.maxSize]      — 最大文件字节数
- * @returns {{ customUpload, handleRemove, isReadyToSubmit }}
+ * @returns {{ customUpload, handleFinish, handleRemove, isReadyToSubmit }}
  */
-import { computed } from 'vue';
+import { computed, ref, watch, getCurrentScope, onScopeDispose } from 'vue';
 import { useMessage } from 'naive-ui';
 import { fileApi } from '../api/file.js';
+import { useAuthStore } from '../stores/authStore.js';
 
 const DEFAULT_ALLOWED_TYPES = [
   'image/jpeg',
@@ -36,9 +37,34 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
   const message = useMessage();
   const allowedTypes = constraints.allowedTypes || DEFAULT_ALLOWED_TYPES;
   const maxSize = constraints.maxSize || DEFAULT_MAX_SIZE;
+  const auth = useAuthStore();
+  const pending = ref(0);
+  const inFlight = new Map();
+  let generation = 0;
+  let disposed = false;
+  const invalidate = () => {
+    generation++;
+    inFlight.clear();
+    pending.value = 0;
+  };
+  watch(() => auth.token, invalidate, { flush: 'sync' });
+  if (getCurrentScope()) {
+    onScopeDispose(() => {
+      disposed = true;
+      invalidate();
+    });
+  }
 
   /** 自定义上传（适配 Naive UI n-upload custom-request） */
   async function customUpload({ file, onFinish, onError }) {
+    if (disposed) return;
+    const key = file.id ?? file;
+    if (inFlight.has(key)) return;
+    const request = { token: auth.token, generation };
+    const isCurrent = () =>
+      !disposed && request.token === auth.token && request.generation === generation && inFlight.get(key) === request;
+    inFlight.set(key, request);
+    pending.value++;
     try {
       const fileType = file.file?.type || file.type;
       const fileSize = file.file?.size || file.size;
@@ -57,6 +83,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
       formData.append('file', file.file || file);
 
       const response = await fileApi.upload(formData);
+      if (!isCurrent()) return;
 
       if (response.data?.url) {
         const url = response.data.url;
@@ -69,7 +96,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
         fileListRef.value = [
           ...(fileListRef.value || []),
           {
-            uid: file.uid,
+            id: file.id,
             name: response.data.filename || file.file?.name || file.name || 'file',
             url,
             status: 'finished',
@@ -81,14 +108,30 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
         throw new Error('服务器未返回文件 URL');
       }
     } catch {
+      if (!isCurrent()) return;
       message.error('附件上传失败');
       onError();
+    } finally {
+      if (inFlight.get(key) === request) {
+        inFlight.delete(key);
+        pending.value--;
+      }
     }
   }
 
+  /** 返回当前上传控件的完成信息；文件名直接使用服务器实际存储名称。 */
+  function handleFinish({ file }) {
+    const stored = fileListRef.value?.find((item) => item.id === file.id);
+    return stored ? { ...file, ...stored } : file;
+  }
+
   /** 移除附件（适配 Naive UI n-upload @remove） */
-  function handleRemove(file) {
-    const url = file.url || file.file?.url;
+  function handleRemove(event) {
+    const file = 'fileList' in event ? event.file : event;
+    const key = file.id ?? file;
+    if (inFlight.delete(key)) pending.value--;
+    const stored = fileListRef.value?.find((item) => item.id === file.id);
+    const url = file.url || stored?.url;
     if (url && attachmentsRef.value != null) {
       if (Array.isArray(attachmentsRef.value)) {
         attachmentsRef.value = attachmentsRef.value.filter((u) => u !== url);
@@ -97,7 +140,7 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
       }
     }
     if (fileListRef.value) {
-      fileListRef.value = fileListRef.value.filter((item) => item.url !== url && item.uid !== file.uid);
+      fileListRef.value = fileListRef.value.filter((item) => item.id !== file.id && (!url || item.url !== url));
     }
     message.info('附件已移除');
   }
@@ -107,8 +150,8 @@ export function useFileUpload(attachmentsRef, fileListRef, constraints = {}) {
     const val = attachmentsRef.value;
     const attLen = Array.isArray(val) ? val.length : val ? 1 : 0;
     const listLen = fileListRef.value?.length || 0;
-    return attLen === listLen;
+    return pending.value === 0 && attLen === listLen;
   });
 
-  return { customUpload, handleRemove, isReadyToSubmit };
+  return { customUpload, handleFinish, handleRemove, isReadyToSubmit };
 }

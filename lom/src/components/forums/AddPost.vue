@@ -13,6 +13,7 @@
         multiple
         :max="5"
         :default-file-list="defaultFileList"
+        @finish="handleFinish"
         @remove="handleRemove"
       >
         <n-button>点击上传</n-button>
@@ -21,8 +22,8 @@
 
     <n-form-item>
       <n-space justify="end" :size="12">
-        <n-button @click="emit('cancel')">取消</n-button>
-        <n-button type="primary" @click="handleSubmit" :disabled="!isReadyToSubmit" :loading="submitting">
+        <n-button @click="cancel">取消</n-button>
+        <n-button type="primary" @click="handleSubmit" :disabled="!isReadyToSubmit || submitting" :loading="submitting">
           提交
         </n-button>
       </n-space>
@@ -59,7 +60,7 @@ const submitting = ref(false);
 const defaultFileList = ref([]);
 const formRef = ref(null);
 
-const { customUpload, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
+const { customUpload, handleFinish, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
 let generation = 0;
 let disposed = false;
 const context = () => ({ postId: props.postId, token: authStore.token, generation });
@@ -80,6 +81,10 @@ onBeforeUnmount(() => {
   disposed = true;
   generation++;
 });
+const cancel = () => {
+  generation++;
+  emit('cancel');
+};
 
 const rules = {
   content: [
@@ -93,17 +98,17 @@ const rules = {
 };
 
 const handleSubmit = async () => {
-  if (submitting.value) return;
+  if (submitting.value || !isReadyToSubmit.value) return;
   const request = context();
   try {
     submitting.value = true;
     await formRef.value?.validate();
-    if (!isCurrent(request)) return;
+    if (!isCurrent(request) || !isReadyToSubmit.value) return;
 
     await forumApi.createReply({
       postId: request.postId,
       content: formData.value.content,
-      attachments: attachments.value,
+      attachments: [...attachments.value],
       region: formData.value.region,
     });
     if (!isCurrent(request)) return;

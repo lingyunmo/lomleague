@@ -25,6 +25,7 @@
         multiple
         :max="5"
         :default-file-list="defaultFileList"
+        @finish="handleFinish"
         @remove="handleRemove"
       >
         <n-button>上传附件</n-button>
@@ -33,10 +34,10 @@
 
     <!-- 操作按钮 -->
     <n-space justify="end" :size="12">
-      <n-button type="primary" @click="handleSubmit" :disabled="!isReadyToSubmit" :loading="submitting">
+      <n-button type="primary" @click="handleSubmit" :disabled="!isReadyToSubmit || submitting" :loading="submitting">
         提交
       </n-button>
-      <n-button @click="$emit('cancel')">取消</n-button>
+      <n-button @click="cancel">取消</n-button>
     </n-space>
   </n-form>
 </template>
@@ -46,7 +47,7 @@
  * AddArticle — 创建文章表单
  * Issue #10: 接入 useFileUpload composable 消除重复上传逻辑
  */
-import { ref, onMounted } from 'vue';
+import { ref, watch, onBeforeUnmount, onMounted } from 'vue';
 import { useMessage } from 'naive-ui';
 import { articleApi } from '../../api/article.js';
 import { useAuthStore } from '../../stores/authStore.js';
@@ -66,8 +67,29 @@ const attachments = ref([]);
 const defaultFileList = ref([]);
 const submitting = ref(false);
 const formRef = ref(null);
+let generation = 0;
+let disposed = false;
+const context = () => ({ token: authStore.token, generation });
+const isCurrent = (request) => !disposed && request.token === authStore.token && request.generation === generation;
+watch(
+  () => authStore.token,
+  () => {
+    generation++;
+    submitting.value = false;
+    formData.value.region = '';
+  },
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  disposed = true;
+  generation++;
+});
+const cancel = () => {
+  generation++;
+  emit('cancel');
+};
 
-const { customUpload, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
+const { customUpload, handleFinish, handleRemove, isReadyToSubmit } = useFileUpload(attachments, defaultFileList);
 
 const rules = {
   title: [{ required: true, message: '标题不能为空', trigger: 'blur' }],
@@ -82,24 +104,29 @@ const rules = {
 };
 
 const handleSubmit = async () => {
+  if (submitting.value || !isReadyToSubmit.value) return;
+  const request = context();
   try {
     submitting.value = true;
     await formRef.value?.validate();
+    if (!isCurrent(request) || !isReadyToSubmit.value) return;
 
     await articleApi.createArticle({
       title: formData.value.title,
       content: formData.value.content,
       region: formData.value.region,
-      attachments: attachments.value,
+      attachments: [...attachments.value],
     });
 
+    if (!isCurrent(request)) return;
     message.success('文章创建成功！');
     emit('created');
     resetForm();
   } catch {
+    if (!isCurrent(request)) return;
     message.error('创建文章失败，请稍后重试。');
   } finally {
-    submitting.value = false;
+    if (isCurrent(request)) submitting.value = false;
   }
 };
 
@@ -114,8 +141,9 @@ const resetForm = () => {
 };
 
 const fetchUserRegion = async () => {
+  const request = context();
   const data = await authStore.fetchUser();
-  if (data) {
+  if (data && isCurrent(request)) {
     formData.value.region = data.lastLoginRegion?.region || '未知';
   }
 };

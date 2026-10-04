@@ -13,10 +13,13 @@ vi.mock('../../stores/authStore.js', () => ({ useAuthStore: calls.auth }));
 vi.mock('../../api/forum.js', () => ({ forumApi: { createReply: calls.createReply } }));
 vi.mock('naive-ui', () => ({ useMessage: () => ({ success: calls.success, error: calls.error }) }));
 vi.mock('../../composables/useFileUpload.js', () => ({
-  useFileUpload: () => ({ customUpload: vi.fn(), handleRemove: vi.fn(), isReadyToSubmit: ref(true) }),
+  useFileUpload: (attachments) => {
+    attachmentsRef = attachments;
+    return { customUpload: vi.fn(), handleFinish: vi.fn(), handleRemove: vi.fn(), isReadyToSubmit: ready };
+  },
 }));
 import AddPost from './AddPost.vue';
-let auth, wrapper;
+let auth, wrapper, ready, attachmentsRef;
 beforeEach(() => {
   vi.clearAllMocks();
   calls.createReply.mockReset().mockResolvedValue({});
@@ -25,6 +28,8 @@ beforeEach(() => {
   auth = reactive({ token: 'first-session', fetchUser: calls.fetchUser });
   calls.auth.mockReturnValue(auth);
   wrapper = undefined;
+  ready = ref(true);
+  attachmentsRef = undefined;
 });
 afterEach(() => wrapper?.unmount());
 function deferred() {
@@ -69,6 +74,49 @@ async function submit() {
   await flushPromises();
 }
 describe('reply form asynchronous identity', () => {
+  it('does not submit while an attachment starts uploading during validation', async () => {
+    const validation = deferred();
+    calls.validate.mockReturnValueOnce(validation.promise);
+    fixture();
+    await flushPromises();
+    await submit();
+    ready.value = false;
+    validation.resolve();
+    await flushPromises();
+    expect(calls.createReply).not.toHaveBeenCalled();
+    ready.value = true;
+    await flushPromises();
+    await submit();
+    expect(calls.createReply).toHaveBeenCalledTimes(1);
+  });
+  it('does not continue validation after the form is canceled', async () => {
+    const validation = deferred();
+    calls.validate.mockReturnValueOnce(validation.promise);
+    fixture();
+    await flushPromises();
+    await submit();
+    await wrapper
+      .findAll('button')
+      .find((item) => item.text() === '取消')
+      .trigger('click');
+    validation.resolve();
+    await flushPromises();
+    expect(calls.createReply).not.toHaveBeenCalled();
+    expect(wrapper.emitted('cancel')).toHaveLength(1);
+  });
+  it('captures unchanged attachment URLs before a later array mutation', async () => {
+    const saving = deferred();
+    calls.createReply.mockReturnValueOnce(saving.promise);
+    fixture();
+    await flushPromises();
+    const url = '/api/upload/7/1720000000000_%E4%B8%AD100%25%20%25E4%25B8%25AD.pdf';
+    attachmentsRef.value = [url];
+    await submit();
+    attachmentsRef.value.push('/later.pdf');
+    expect(calls.createReply.mock.calls[0][0].attachments).toEqual([url]);
+    saving.resolve({});
+    await flushPromises();
+  });
   it('submits the existing reply contract once and emits creation', async () => {
     const pending = deferred();
     calls.createReply.mockReturnValueOnce(pending.promise);

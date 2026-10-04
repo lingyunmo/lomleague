@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.0.16 — 2026-10-04
+
+- Prevent overlapping post creation and stale post/article/reply submission or feedback after cancellation, unmounting or login changes. Preserve existing validation and capture attachment arrays; requests already sent are not represented as undone.
+- Keep member-region reads scoped to the current form/session. Unmount closed post/article forms and close them on account, permission or list-visit changes. Normal same-member profile refreshes preserve the draft; reopened forms start fresh.
+- Disable content submission while attachments are in flight, including uploads that start during asynchronous validation. Ignore removed, old-session and unmounted upload completions without deleting already stored files.
+- Use the current upload component's existing file id and documented finish/remove events. Display the exact server-stored timestamp filename, preserve Unicode/literal-percent names and raw attachment URLs, and remove only the selected draft reference. No persistent filename mapping or additional transcoding.
+- Scope community-list deletion confirmations to the current visit/member/permissions, destroy only owned stale dialogs and prevent repeated callbacks. Author/admin and backend rules remain unchanged.
+- Add 58 frontend regressions, including actual Naive UI button/upload semantics. Full tests, lint, build, audit, read-only smoke and non-mutating browser form/navigation/mobile checks pass. Direct browser file selection remains limited by disabled Chrome extension file-URL access; actual component and multipart/disk/read tests pass. No production database, stored upload, filename or timestamp changes.
+
 ## 2.0.15 — 2026-10-04
 
 - Keep notification content and unread counts scoped to the current login session. Clear private state on account changes/closing, ignore stale results and stop polling on unmount; retain the original 30-second polling cadence without overlapping requests.

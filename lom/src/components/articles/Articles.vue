@@ -59,12 +59,13 @@
       preset="card"
       style="width: min(760px, calc(100vw - 32px)); padding: 2px; border-radius: 16px; overflow: auto"
     >
-      <AddArticle @created="handleArticleCreated" @cancel="showAddArticleModal = false" />
+      <AddArticle v-if="showAddArticleModal" @created="handleArticleCreated" @cancel="showAddArticleModal = false" />
     </n-modal>
   </div>
 </template>
 <script setup>
-import { ref } from 'vue';
+import { ref, watch, onBeforeUnmount } from 'vue';
+import { useRoute } from 'vue-router';
 import { useMessage, useDialog } from 'naive-ui';
 import { Add, Search } from '@vicons/ionicons5';
 import { articleApi } from '../../api/article.js';
@@ -78,6 +79,7 @@ import ListFetchFeedback from '../ListFetchFeedback.vue';
 import AddArticle from './AddArticle.vue';
 
 const authStore = useAuthStore();
+const route = useRoute();
 const dialog = useDialog();
 const message = useMessage();
 const {
@@ -90,22 +92,58 @@ const {
 } = usePaginatedFetch((params) => articleApi.getArticles(params));
 const { searchKeyword, onPageChange, refresh } = useListRouteQuery(pagination, fetchArticles);
 const showAddArticleModal = ref(false);
+let generation = 0;
+let confirmationSequence = 0;
+let disposed = false;
+let pendingDialog;
+const context = () => ({ token: authStore.token, generation, fullPath: route.fullPath });
+const isCurrent = (request) =>
+  !disposed &&
+  route.name === 'Articles' &&
+  request.token === authStore.token &&
+  request.generation === generation &&
+  request.fullPath === route.fullPath;
+const resetPrivateState = () => {
+  generation++;
+  confirmationSequence++;
+  pendingDialog?.destroy();
+  pendingDialog = undefined;
+  showAddArticleModal.value = false;
+};
+watch(
+  [() => authStore.token, () => authStore.isAdmin, () => authStore.user?.id, () => route.fullPath],
+  resetPrivateState,
+  { flush: 'sync' },
+);
+onBeforeUnmount(() => {
+  disposed = true;
+  resetPrivateState();
+});
 const handleArticleCreated = () => {
   showAddArticleModal.value = false;
   refresh();
 };
 const confirmDeleteArticle = (articleId) => {
-  dialog.warning({
+  if (!authStore.token || !authStore.isAdmin) return;
+  pendingDialog?.destroy();
+  const sequence = ++confirmationSequence;
+  const request = context();
+  let confirmed = false;
+  pendingDialog = dialog.warning({
     title: '确认删除',
     content: '删除后无法恢复，确定删除此文章？',
     positiveText: '确定',
     negativeText: '取消',
     onPositiveClick: async () => {
+      if (confirmed || sequence !== confirmationSequence || !isCurrent(request)) return;
+      confirmed = true;
       try {
         await articleApi.deleteArticle(articleId);
+        if (!isCurrent(request)) return;
         message.success('文章已删除');
         fetchArticles();
       } catch {
+        if (!isCurrent(request)) return;
         message.error('删除失败');
       }
     },
